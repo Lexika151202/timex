@@ -1,0 +1,1687 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Packing Optimizer</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box
+        }
+
+        :root {
+            --primary: #0066FF;
+            --primary-dark: #0052CC;
+            --secondary: #00C9A7;
+            --danger: #FF4757;
+            --warning: #FFA502;
+            --bg-main: #F8FAFC;
+            --bg-panel: #FFFFFF;
+            --border: #E2E8F0;
+            --border2: #CBD5E1;
+            --text-primary: #1E293B;
+            --text-secondary: #64748B;
+            --text-muted: #94A3B8;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, .05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, .1), 0 2px 4px -1px rgba(0, 0, 0, .06);
+            --mono: 'JetBrains Mono', monospace;
+            --sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            font-family: var(--sans);
+            background: var(--bg-main);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden
+        }
+
+        /* ── HEADER ── */
+        .hdr {
+            height: 56px;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            gap: 16px;
+            flex-shrink: 0;
+            box-shadow: var(--shadow-sm)
+        }
+
+        .hdr-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary)
+        }
+
+        .logo-mark {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            color: #fff;
+            font-family: var(--mono)
+        }
+
+        .hdr-right {
+            margin-left: auto;
+            display: flex;
+            gap: 10px;
+            align-items: center
+        }
+
+        .mode-chip {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            font-family: var(--mono);
+            background: rgba(0, 102, 255, .08);
+            color: var(--primary);
+            border: 1px solid rgba(0, 102, 255, .2)
+        }
+
+        .mode-chip.manual {
+            background: rgba(255, 107, 53, .08);
+            color: #ea580c;
+            border-color: rgba(255, 107, 53, .25)
+        }
+
+        .btn {
+            padding: 8px 18px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            font-family: var(--sans);
+            transition: .15s
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border)
+        }
+
+        .btn-ghost:hover {
+            background: var(--bg-main);
+            color: var(--text-primary)
+        }
+
+        /* ── LAYOUT ── */
+        .app {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 380px 1fr 300px;
+            overflow: hidden
+        }
+
+        /* ── LEFT PANEL ── */
+        .left {
+            background: var(--bg-panel);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden
+        }
+
+        .panel-hd {
+            padding: 20px 22px 14px;
+            border-bottom: 1px solid var(--border)
+        }
+
+        .panel-hd h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 2px
+        }
+
+        .panel-hd p {
+            font-size: 12px;
+            color: var(--text-muted)
+        }
+
+        .scroll {
+            overflow-y: auto;
+            flex: 1;
+            padding: 18px 22px
+        }
+
+        .scroll::-webkit-scrollbar {
+            width: 4px
+        }
+
+        .scroll::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 2px
+        }
+
+        .sec {
+            margin-bottom: 24px
+        }
+
+        .sec-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px
+        }
+
+        .sec-title .step-badge {
+            display: inline-block;
+            padding: 1px 7px;
+            background: var(--primary);
+            color: #fff;
+            border-radius: 10px;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: .3px
+        }
+
+        /* Deck */
+        .deck-opts {
+            display: flex;
+            flex-direction: column;
+            gap: 7px
+        }
+
+        .deck-opt {
+            padding: 13px 15px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: .15s;
+            background: var(--bg-panel)
+        }
+
+        .deck-opt:hover {
+            border-color: var(--primary);
+            background: #F0F7FF
+        }
+
+        .deck-opt.sel {
+            border-color: var(--primary);
+            background: #F0F7FF;
+            box-shadow: 0 0 0 3px rgba(0, 102, 255, .08)
+        }
+
+        .deck-opt-hd {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px
+        }
+
+        .deck-opt-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-primary)
+        }
+
+        .deck-badge {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 5px;
+            background: var(--bg-main);
+            color: var(--text-secondary);
+            font-weight: 500
+        }
+
+        .deck-opt.sel .deck-badge {
+            background: rgba(0, 102, 255, .1);
+            color: var(--primary)
+        }
+
+        .deck-specs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .deck-spec {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .spec-icon {
+            width: 14px;
+            height: 14px;
+            opacity: 0.6;
+        }
+
+        /* Box rows */
+        .box-row {
+            display: grid;
+            grid-template-columns: 18px 10px 1fr 90px;
+            gap: 10px;
+            align-items: center;
+            padding: 11px 13px;
+            background: var(--bg-main);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 6px;
+            transition: .15s
+        }
+
+        .box-row:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-sm)
+        }
+
+        .box-row.active {
+            border-color: rgba(0, 102, 255, .35);
+            background: #F8FBFF
+        }
+
+        .box-chk {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            accent-color: var(--primary)
+        }
+
+        .box-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+            flex-shrink: 0
+        }
+
+        .box-info .box-name {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-primary)
+        }
+
+        .box-info .box-dim {
+            font-size: 10px;
+            font-family: var(--mono);
+            color: var(--text-muted);
+            margin-top: 1px
+        }
+
+        .qty-ctrl {
+            display: flex;
+            align-items: center;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            overflow: hidden
+        }
+
+        .qty-b {
+            width: 26px;
+            height: 28px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 15px;
+            cursor: pointer;
+            transition: .1s
+        }
+
+        .qty-b:hover {
+            background: var(--bg-main);
+            color: var(--primary)
+        }
+
+        .qty-n {
+            width: 34px;
+            height: 28px;
+            border: none;
+            text-align: center;
+            font-size: 12px;
+            font-family: var(--mono);
+            font-weight: 600;
+            background: transparent;
+            color: var(--text-primary);
+            -moz-appearance: textfield
+        }
+
+        .qty-n::-webkit-inner-spin-button {
+            display: none
+        }
+
+        .qty-n:focus {
+            outline: none
+        }
+
+        /* Left footer */
+        .left-footer {
+            padding: 16px 22px;
+            border-top: 1px solid var(--border);
+            background: var(--bg-panel);
+            flex-shrink: 0
+        }
+
+        .summary-bar-dark {
+            background: transparent;
+            padding: 0;
+            margin-bottom: 0;
+            display: flex;
+            align-items: center;
+            gap: 0;
+            min-width: auto
+        }
+
+        .sb-title {
+            display: none
+        }
+
+        .sb-metrics {
+            display: flex;
+            gap: 28px
+        }
+
+        .sb-metric {
+            text-align: right;
+            border-right: none
+        }
+
+        .sb-metric:last-child {
+            border-right: none
+        }
+
+        .sb-val {
+            font-size: 18px;
+            font-family: var(--mono);
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.1
+        }
+
+        .sb-val.green {
+            color: var(--secondary)
+        }
+
+        .sb-label {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: .3px;
+            color: var(--text-muted);
+            margin-top: 1px
+        }
+
+        .left-btns {
+            display: flex;
+            gap: 10px
+        }
+
+        .btn-sm {
+            flex: 1;
+            padding: 11px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            font-family: var(--sans);
+            transition: .15s
+        }
+
+        .btn-reset {
+            background: var(--bg-main);
+            color: var(--text-secondary);
+            border: 1px solid var(--border)
+        }
+
+        .btn-reset:hover {
+            color: var(--text-primary)
+        }
+
+        .btn-optimize {
+            background: var(--primary);
+            color: #fff
+        }
+
+        .btn-optimize:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md)
+        }
+
+        /* ── CENTER PANEL ── */
+        .center {
+            background: var(--bg-main);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden
+        }
+
+        .center-hd {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            background: var(--bg-panel)
+        }
+
+        .center-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary)
+        }
+
+        .center-sub {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px
+        }
+
+        .manual-notice {
+            padding: 8px 20px;
+            background: rgba(234, 88, 12, .06);
+            border-bottom: 1px solid rgba(234, 88, 12, .15);
+            font-size: 11px;
+            color: #c2410c;
+            display: none;
+            align-items: center;
+            gap: 8px
+        }
+
+        /* Canvas */
+        .canvas-wrap {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 28px;
+            position: relative;
+            overflow: auto
+        }
+
+        .canvas-bg {
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(circle, #CBD5E1 1px, transparent 1px);
+            background-size: 22px 22px;
+            opacity: .5
+        }
+
+        /* Pallet */
+        .pallet-wrap {
+            position: relative;
+            z-index: 1
+        }
+
+        .pallet-label {
+            font-size: 10px;
+            font-family: var(--mono);
+            color: var(--text-muted);
+            text-align: center;
+            margin-bottom: 8px;
+            letter-spacing: .3px
+        }
+
+        .pallet-outer {
+            position: relative;
+            border: 2px solid var(--border2);
+            border-radius: 4px;
+            background: #fff;
+            box-shadow: var(--shadow-md), 0 0 0 1px rgba(0, 0, 0, .03);
+            overflow: hidden
+        }
+
+        .pallet-base {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 8px;
+            background: repeating-linear-gradient(90deg, #E2E8F0 0, #E2E8F0 5px, #F8FAFC 5px, #F8FAFC 18px);
+            border-top: 1px solid var(--border2)
+        }
+
+        .grid-cell {
+            position: absolute;
+            border: 1px solid rgba(255, 255, 255, .4);
+            border-radius: 3px;
+            cursor: grab;
+            transition: box-shadow .15s, transform .1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            font-size: 9px;
+            font-family: var(--mono);
+            font-weight: 600;
+            overflow: hidden
+        }
+
+        .grid-cell:hover {
+            box-shadow: 0 0 0 2px var(--primary), 0 4px 12px rgba(0, 102, 255, .2);
+            z-index: 20;
+            transform: translateY(-1px)
+        }
+
+        .grid-cell.dragging {
+            opacity: .65;
+            cursor: grabbing;
+            z-index: 100;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, .2)
+        }
+
+        .grid-cell .cell-lbl {
+            opacity: 0;
+            transition: .15s;
+            color: rgba(255, 255, 255, .95);
+            text-shadow: 0 1px 3px rgba(0, 0, 0, .6);
+            pointer-events: none;
+            text-align: center;
+            line-height: 1.3;
+            padding: 2px;
+            font-size: 9px
+        }
+
+        .grid-cell:hover .cell-lbl {
+            opacity: 1
+        }
+
+        .drop-zone {
+            position: absolute;
+            border: 2px dashed rgba(0, 102, 255, .5);
+            border-radius: 4px;
+            background: rgba(0, 102, 255, .06);
+            pointer-events: none;
+            display: none;
+            z-index: 50
+        }
+
+        .layer-chips {
+            margin-top: 10px;
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            flex-wrap: wrap
+        }
+
+        .layer-chip {
+            font-size: 10px;
+            font-family: var(--mono);
+            padding: 3px 10px;
+            border-radius: 4px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            color: var(--text-muted)
+        }
+
+        /* Empty state */
+        .empty-vis {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            position: relative;
+            z-index: 1;
+            padding: 40px
+        }
+
+        .empty-vis svg {
+            opacity: .18
+        }
+
+        .empty-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-secondary)
+        }
+
+        .empty-sub {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: center;
+            max-width: 240px;
+            line-height: 1.6
+        }
+
+        /* Status bar */
+
+
+        /* ── RIGHT PANEL ── */
+        .right {
+            background: var(--bg-panel);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden
+        }
+
+        .right-hd {
+            padding: 20px 18px 14px;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0
+        }
+
+        .right-hd h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary)
+        }
+
+        .right-scroll {
+            overflow-y: auto;
+            flex: 1;
+            padding: 16px 18px
+        }
+
+        .right-scroll::-webkit-scrollbar {
+            width: 4px
+        }
+
+        .right-scroll::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 2px
+        }
+
+        .r-sec {
+            margin-bottom: 22px
+        }
+
+        .r-sec-title {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px
+        }
+
+        .r-sec-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border)
+        }
+
+        /* Weight gauge */
+        .gauge-hd {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 6px
+        }
+
+        .gauge-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary)
+        }
+
+        .gauge-vals {
+            font-family: var(--mono);
+            font-size: 12px
+        }
+
+        .gauge-cur {
+            color: var(--text-primary);
+            font-weight: 600
+        }
+
+        .gauge-max {
+            color: var(--text-muted)
+        }
+
+        .gauge-track {
+            height: 8px;
+            background: var(--bg-main);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 4px;
+            border: 1px solid var(--border)
+        }
+
+        .gauge-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width .4s;
+            background: linear-gradient(90deg, var(--primary), var(--secondary))
+        }
+
+        .gauge-fill.warn {
+            background: linear-gradient(90deg, var(--warning), #ff8c00)
+        }
+
+        .gauge-fill.danger {
+            background: linear-gradient(90deg, var(--danger), #ff8040)
+        }
+
+        .gauge-pct {
+            font-size: 10px;
+            font-family: var(--mono);
+            color: var(--text-muted);
+            text-align: right
+        }
+
+        /* Capacity cards */
+        .cap-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 0
+        }
+
+        .cap-card {
+            background: var(--bg-main);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 12px
+        }
+
+        .cap-card-label {
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: .6px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 4px
+        }
+
+        .cap-card-val {
+            font-size: 20px;
+            font-family: var(--mono);
+            font-weight: 700;
+            color: var(--text-primary)
+        }
+
+        .cap-card-unit {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-left: 2px
+        }
+
+        .cap-card-sub {
+            font-size: 9px;
+            color: var(--text-muted);
+            margin-top: 2px
+        }
+
+        /* Box forecast */
+        .fcst-intro {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            line-height: 1.5
+        }
+
+        .fcst-list {
+            display: flex;
+            flex-direction: column;
+            gap: 7px
+        }
+
+        .fcst-row {
+            background: var(--bg-main);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 12px
+        }
+
+        .fcst-row-hd {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 7px
+        }
+
+        .fcst-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 2px;
+            flex-shrink: 0
+        }
+
+        .fcst-name {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-primary);
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap
+        }
+
+        .fcst-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px
+        }
+
+        .fcst-m-label {
+            font-size: 9px;
+            color: var(--text-muted);
+            font-family: var(--mono)
+        }
+
+        .fcst-m-val {
+            font-size: 14px;
+            font-family: var(--mono);
+            font-weight: 700
+        }
+
+        .fcst-m-val.green {
+            color: #16a34a
+        }
+
+        .fcst-m-val.orange {
+            color: var(--warning)
+        }
+
+        .fcst-m-val.red {
+            color: var(--danger)
+        }
+
+        .fcst-bar {
+            height: 3px;
+            background: var(--border);
+            border-radius: 2px;
+            margin-top: 6px;
+            overflow: hidden
+        }
+
+        .fcst-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width .3s
+        }
+
+        .fcst-empty {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-align: center;
+            padding: 16px
+        }
+
+        /* Pallet specs */
+        .dim-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 7px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 12px
+        }
+
+        .dim-row:last-child {
+            border-bottom: none
+        }
+
+        .dim-key {
+            color: var(--text-muted);
+            font-family: var(--mono)
+        }
+
+        .dim-val {
+            color: var(--text-primary);
+            font-family: var(--mono);
+            font-weight: 600
+        }
+
+        .dim-val.accent {
+            color: var(--primary)
+        }
+
+        /* Tooltip */
+        .tooltip {
+            position: fixed;
+            background: var(--text-primary);
+            border-radius: 7px;
+            padding: 8px 12px;
+            font-size: 11px;
+            font-family: var(--mono);
+            color: #fff;
+            pointer-events: none;
+            z-index: 9999;
+            white-space: nowrap;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, .25);
+            opacity: 0;
+            transition: opacity .1s
+        }
+
+        .tooltip.show {
+            opacity: 1
+        }
+
+        .tt-name {
+            font-weight: 700;
+            color: var(--secondary);
+            margin-bottom: 4px;
+            font-size: 12px
+        }
+
+        .tt-row {
+            color: rgba(255, 255, 255, .7);
+            margin-bottom: 2px
+        }
+
+        .tt-row span {
+            color: #fff
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(3px)
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0)
+            }
+        }
+
+        .animate-in {
+            animation: fadeIn .25s ease forwards
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <header class="hdr">
+        <div class="hdr-logo">
+            <div class="logo-mark">PO</div>
+            Packing Optimization
+        </div>
+        <div class="hdr-right">
+            <div class="mode-chip" id="mode-chip">AUTO MODE</div>
+            <button class="btn btn-ghost" id="btn-manual-toggle">Switch to Manual</button>
+        </div>
+    </header>
+
+    <!-- APP -->
+    <div class="app">
+
+        <!-- LEFT: Config -->
+        <div class="left">
+            <div class="panel-hd">
+                <h3>Configuration</h3>
+                <p>Configure your pallet layout parameters</p>
+            </div>
+            <div class="scroll">
+
+                <div class="sec">
+                    <div class="sec-title"><span>Select Deck Position</span></div>
+                    <div class="deck-opts" id="deck-opts">
+                        <div class="deck-opt sel" data-deck="standard">
+                            <div class="deck-opt-hd">
+                                <span class="deck-opt-name">Standard Pallet Only</span>
+                                <span class="deck-badge">N/A</span>
+                            </div>
+                            <div class="deck-specs">
+                                <div class="deck-spec">
+                                    <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                                    Type: PMC
+                                </div>
+                                <div class="deck-spec">
+                                    <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path
+                                            d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
+                                        </path>
+                                    </svg>
+                                    Weight: 6,804kg
+                                </div>
+                                <div class="deck-spec">
+                                    <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                                    Width: 243.8cm
+                                </div>
+                                <div class="deck-spec">
+                                    <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                                    Length: 317.5cm
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="deck-opt" data-deck="lower">
+                            <div class="deck-opt-hd">
+                                <span class="deck-opt-name">Lower Deck</span>
+                                <!-- <span class="deck-badge">Standard</span> -->
+                            </div>
+                            <div class="deck-specs">
+                                <div class="deck-spec">
+                                    <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <polyline points="19 12 12 19 5 12"></polyline>
+                                    </svg>
+                                    Height: 120cm
+                                </div>
+                                <div class="deck-spec">
+                                    <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path
+                                            d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
+                                        </path>
+                                    </svg>
+                                    Weight: 3,175kg
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="deck-opt" data-deck="main">
+                            <div class="deck-opt-hd">
+                                <span class="deck-opt-name">Main Deck</span>
+                                <!-- <span class="deck-badge">Premium</span> -->
+                            </div>
+                            <div class="deck-specs">
+                                <div class="deck-spec">
+                                    <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <polyline points="19 12 12 19 5 12"></polyline>
+                                    </svg>
+                                    Height: 160cm
+                                </div>
+                                <div class="deck-spec">
+                                    <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path
+                                            d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
+                                        </path>
+                                    </svg>
+                                    Weight: 6,804kg
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="deck-opt" data-deck="freighter">
+                            <div class="deck-opt-hd">
+                                <span class="deck-opt-name">Main Deck Freighter</span>
+                                <!-- <span class="deck-badge">Cargo</span> -->
+                            </div>
+                            <div class="deck-specs">
+                                <div class="deck-spec">
+                                    <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <polyline points="19 12 12 19 5 12"></polyline>
+                                    </svg>
+                                    Height: 240cm
+                                </div>
+                                <div class="deck-spec">
+                                    <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path
+                                            d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
+                                        </path>
+                                    </svg>
+                                    Weight: 11,340kg
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sec">
+                    <div class="sec-title"><span>Select Box Types & Quantities</span></div>
+                    <div id="box-list"></div>
+                </div>
+
+            </div>
+
+            <div class="left-footer">
+                <div class="left-btns">
+                    <button class="btn-sm btn-reset" id="btn-reset">Reset</button>
+                    <button class="btn-sm btn-optimize" id="btn-optimize">Optimize Layout</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- CENTER: Visualization -->
+        <div class="center">
+            <div class="center-hd">
+                <div>
+                    <div class="center-title">3D Pallet Preview</div>
+                    <div class="center-sub" id="center-sub">Interactive visualization of optimized layout</div>
+                </div>
+                <div class="summary-bar-dark">
+                    <div class="sb-metrics">
+                        <div class="sb-metric">
+                            <div class="sb-val" id="sum-boxes">0</div>
+                            <div class="sb-label">Total Boxes</div>
+                        </div>
+                        <div class="sb-metric">
+                            <div class="sb-val" id="sum-types">0</div>
+                            <div class="sb-label">Box Types</div>
+                        </div>
+                        <div class="sb-metric">
+                            <div class="sb-val green" id="sum-eff">—</div>
+                            <div class="sb-label">Space Efficiency</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="manual-notice" id="manual-notice">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                <strong>Manual Mode aktif:</strong>&nbsp;Drag boxes to rearrange.
+            </div>
+
+            <div class="canvas-wrap" id="canvas-wrap">
+                <div class="canvas-bg"></div>
+
+                <div class="empty-vis" id="vis-empty">
+                    <svg width="100" height="100" viewBox="0 0 200 200" fill="none">
+                        <rect x="40" y="80" width="120" height="80" rx="4" fill="#E2E8F0" />
+                        <rect x="50" y="50" width="40" height="30" rx="2" fill="#94A3B8" />
+                        <rect x="95" y="50" width="40" height="30" rx="2" fill="#94A3B8" />
+                        <rect x="50" y="90" width="40" height="30" rx="2" fill="#64748B" />
+                        <rect x="95" y="90" width="40" height="30" rx="2" fill="#64748B" />
+                        <rect x="50" y="130" width="40" height="20" rx="2" fill="#475569" />
+                        <line x1="100" y1="40" x2="100" y2="15" stroke="#CBD5E1" stroke-width="2" />
+                        <line x1="90" y1="20" x2="100" y2="15" stroke="#CBD5E1" stroke-width="2" />
+                        <line x1="110" y1="20" x2="100" y2="15" stroke="#CBD5E1" stroke-width="2" />
+                    </svg>
+                    <div class="empty-title">No optimization result yet</div>
+                    <div class="empty-sub">Select deck position and box types, then click <strong
+                            style="color:var(--primary)">Optimize Layout</strong> to generate the preview</div>
+                </div>
+
+                <div id="vis-content" style="display:none;position:relative;z-index:1"></div>
+            </div>
+
+
+        </div>
+
+        <!-- RIGHT: Analytics -->
+        <div class="right">
+            <div class="right-hd">
+                <h3>Pallet Analytics</h3>
+            </div>
+            <div class="right-scroll">
+
+                <div class="r-sec">
+                    <div class="r-sec-title">Weight Capacity</div>
+                    <div class="gauge-hd">
+                        <span class="gauge-label">Current Load</span>
+                        <span class="gauge-vals"><span class="gauge-cur" id="g-cur">0</span><span class="gauge-max"
+                                id="g-max"> / 3,175 kg</span></span>
+                    </div>
+                    <div class="gauge-track">
+                        <div class="gauge-fill" id="g-fill" style="width:0%"></div>
+                    </div>
+                    <div class="gauge-pct" id="g-pct">0% used</div>
+                </div>
+
+                <div class="r-sec">
+                    <div class="r-sec-title">Remaining Capacity</div>
+                    <div class="cap-grid">
+                        <div class="cap-card">
+                            <div class="cap-card-label">Weight Left</div>
+                            <div class="cap-card-val"><span id="r-weight">3,175</span><span
+                                    class="cap-card-unit">kg</span></div>
+                            <div class="cap-card-sub">Available to load</div>
+                        </div>
+                        <div class="cap-card">
+                            <div class="cap-card-label">Space Left</div>
+                            <div class="cap-card-val"><span id="r-vol">100</span><span class="cap-card-unit">%</span>
+                            </div>
+                            <div class="cap-card-sub">Space remaining</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="r-sec">
+                    <div class="r-sec-title">Additional Box Forecast</div>
+                    <div class="fcst-intro">Estimated boxes that can still fit based on remaining weight & height</div>
+                    <div class="fcst-list" id="fcst-list">
+                        <div class="fcst-empty">Run optimization to see forecast</div>
+                    </div>
+                </div>
+
+
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Tooltip -->
+    <div class="tooltip" id="tooltip">
+        <div class="tt-name" id="tt-name"></div>
+        <div class="tt-row">Size: <span id="tt-size"></span></div>
+        <div class="tt-row">Weight: <span id="tt-wt"></span></div>
+        <div class="tt-row">Layer: <span id="tt-layer"></span></div>
+        <div class="tt-row">Position: <span id="tt-pos"></span></div>
+    </div>
+
+    <script>
+        // ─── DATA ───────────────────────────────────
+        const BOX_TYPES = [
+            { id: 'b2', name: '2-Pack POD Self Locking', w: 14.2, d: 8.9, h: 11, kg: 0.42, color: '#3B82F6' },
+            { id: 'b4', name: '4-Pack POD Self Locking', w: 17.3, d: 14.2, h: 11, kg: 0.78, color: '#8B5CF6' },
+            { id: 'b6', name: '6-Pack POD Self Locking', w: 22.8, d: 16.4, h: 11, kg: 1.12, color: '#EC4899' },
+            { id: 'b10', name: '10-Pack POD Self Locking', w: 34.5, d: 16.4, h: 11, kg: 1.85, color: '#F59E0B' },
+            { id: 'b15', name: '15-Pack POD Self Locking', w: 36.3, d: 23.9, h: 11, kg: 2.60, color: '#10B981' },
+            { id: 'b25', name: '25-Pack POD RSC', w: 38.9, d: 33.4, h: 11, kg: 4.20, color: '#EF4444' },
+            { id: 'b40', name: '40-Pack POD RSC', w: 38.9, d: 27.0, h: 19.5, kg: 6.50, color: '#F97316' },
+            { id: 'b50', name: '50-Pack POD RSC', w: 58.9, d: 33.4, h: 19.5, kg: 8.10, color: '#06B6D4' },
+        ];
+        const DECKS = {
+            standard: { pw: 243.8, pd: 317.5, maxH: 244, maxW: 6804 },
+            lower: { pw: 243.8, pd: 317.5, maxH: 120, maxW: 3175 },
+            main: { pw: 243.8, pd: 317.5, maxH: 160, maxW: 6804 },
+            freighter: { pw: 243.8, pd: 317.5, maxH: 240, maxW: 11340 },
+        };
+        const DFLT_QTY = { b2: 24, b4: 18, b6: 0, b10: 12, b15: 0, b25: 8, b40: 0, b50: 0 };
+        const DFLT_CHK = { b2: true, b4: true, b6: false, b10: true, b15: false, b25: true, b40: false, b50: false };
+
+        let S = {
+            deck: 'standard',
+            qty: { ...DFLT_QTY },
+            chk: { ...DFLT_CHK },
+            layout: [],
+            layerDefs: [],
+            totalWeight: 0,
+            optimized: false,
+            isManual: false,
+            zoom: 0.5,
+        };
+
+        const SCALE = 2.2;
+
+        // ─── BOX LIST ───────────────────────────────
+        function initBoxList() {
+            const el = document.getElementById('box-list');
+            el.innerHTML = BOX_TYPES.map(b => `
+    <div class="box-row${S.chk[b.id] && S.qty[b.id] > 0 ? ' active' : ''}" id="row-${b.id}">
+      <input type="checkbox" class="box-chk" data-id="${b.id}" ${S.chk[b.id] ? 'checked' : ''}>
+      <div class="box-dot" style="background:${b.color}"></div>
+      <div class="box-info">
+        <div class="box-name">${b.name}</div>
+        <div class="box-dim">${b.w}×${b.d}×${b.h}cm · ${b.kg}kg/box</div>
+      </div>
+      <div class="qty-ctrl">
+        <button class="qty-b" data-id="${b.id}" data-d="-1">−</button>
+        <input type="number" class="qty-n" data-id="${b.id}" value="${S.qty[b.id]}" min="0">
+        <button class="qty-b" data-id="${b.id}" data-d="1">+</button>
+      </div>
+    </div>
+  `).join('');
+            el.querySelectorAll('.box-chk').forEach(c => c.addEventListener('change', e => { S.chk[e.target.dataset.id] = e.target.checked; refreshRow(e.target.dataset.id); updateSummary() }));
+            el.querySelectorAll('.qty-b').forEach(b => b.addEventListener('click', e => {
+                const id = e.currentTarget.dataset.id, d = +e.currentTarget.dataset.d;
+                S.qty[id] = Math.max(0, (S.qty[id] || 0) + d);
+                el.querySelector(`input[data-id="${id}"]`).value = S.qty[id];
+                refreshRow(id); updateSummary();
+            }));
+            el.querySelectorAll('.qty-n').forEach(i => i.addEventListener('input', e => { S.qty[e.target.dataset.id] = Math.max(0, parseInt(e.target.value) || 0); refreshRow(e.target.dataset.id); updateSummary() }));
+        }
+        function refreshRow(id) {
+            const r = document.getElementById('row-' + id);
+            if (r) r.className = 'box-row' + (S.chk[id] && S.qty[id] > 0 ? ' active' : '');
+        }
+
+        // ─── DECK ────────────────────────────────────
+        document.getElementById('deck-opts').addEventListener('click', e => {
+            const o = e.target.closest('.deck-opt');
+            if (!o) return;
+            document.querySelectorAll('.deck-opt').forEach(x => x.classList.remove('sel'));
+            o.classList.add('sel');
+            S.deck = o.dataset.deck;
+            updatePalletDims(); updateCapacity();
+        });
+        function updatePalletDims() {
+            const c = DECKS[S.deck];
+            document.getElementById('g-max').textContent = ' / ' + c.maxW.toLocaleString() + ' kg';
+            document.getElementById('r-height-sub') && (document.getElementById('r-height-sub').textContent = 'of ' + c.maxH + 'cm max');
+        }
+
+        // ─── SUMMARY ────────────────────────────────
+        function updateSummary() {
+            let boxes = 0, types = 0;
+            BOX_TYPES.forEach(b => { if (S.chk[b.id] && S.qty[b.id] > 0) { boxes += S.qty[b.id]; types++ } });
+            document.getElementById('sum-boxes').textContent = boxes;
+            document.getElementById('sum-types').textContent = types;
+            if (S.optimized) computeEfficiency();
+        }
+        function computeEfficiency() {
+            if (!S.layout.length) { document.getElementById('sum-eff').textContent = '—'; return }
+            const c = DECKS[S.deck];
+            let usedVol = 0; S.layout.forEach(i => usedVol += i.w * i.d * i.h);
+            const eff = Math.round(usedVol / (c.pw * c.pd * c.maxH) * 100);
+            document.getElementById('sum-eff').textContent = eff + '%';
+        }
+
+        // ─── OPTIMIZE ───────────────────────────────
+        function runOptimize() {
+            const c = DECKS[S.deck];
+            const boxes = [];
+            BOX_TYPES.forEach(b => { if (S.chk[b.id] && S.qty[b.id] > 0) for (let i = 0; i < S.qty[b.id]; i++)boxes.push({ ...b }) });
+            if (!boxes.length) { alert('Please select at least one box type with quantity > 0'); return }
+            boxes.sort((a, b) => (b.w * b.d) - (a.w * a.d));
+
+            const layout = [];
+            const layerDefs = [];
+            const occupancy = [];
+            let totalWeight = 0;
+
+            function canPlace(bx, by, bw, bd, li) {
+                for (const o of occupancy) {
+                    if (o.li !== li) continue;
+                    if (!(bx >= o.x2 || bx + bw <= o.x1 || by >= o.y2 || by + bd <= o.y1)) return false;
+                }
+                return bx + bw <= c.pw && by + bd <= c.pd;
+            }
+
+            for (const box of boxes) {
+                if (totalWeight + box.kg > c.maxW) break;
+                let placed = false;
+                for (let li = 0; li < layerDefs.length && !placed; li++) {
+                    const layer = layerDefs[li];
+                    if (layer.z + layer.h + box.h > c.maxH) continue;
+                    for (let bx = 0; bx <= c.pw - box.w && !placed; bx += 1) {
+                        for (let by = 0; by <= c.pd - box.d && !placed; by += 1) {
+                            if (canPlace(bx, by, box.w, box.d, li)) {
+                                layout.push({ id: layout.length, type: box.id, x: bx, y: by, z: layer.z + layer.h, layer: li + 1, w: box.w, d: box.d, h: box.h, kg: box.kg, color: box.color, name: box.name });
+                                occupancy.push({ li, x1: bx, y1: by, x2: bx + box.w, y2: by + box.d });
+                                if (box.h > layer.h) layer.h = box.h;
+                                layer.items.push(layout[layout.length - 1]);
+                                totalWeight += box.kg; placed = true;
+                            }
+                        }
+                    }
+                }
+                if (!placed) {
+                    const newZ = layerDefs.length ? layerDefs[layerDefs.length - 1].z + layerDefs[layerDefs.length - 1].h : 0;
+                    if (newZ + box.h <= c.maxH) {
+                        const li = layerDefs.length;
+                        layerDefs.push({ z: newZ, h: box.h, items: [] });
+                        layout.push({ id: layout.length, type: box.id, x: 0, y: 0, z: newZ, layer: li + 1, w: box.w, d: box.d, h: box.h, kg: box.kg, color: box.color, name: box.name });
+                        occupancy.push({ li, x1: 0, y1: 0, x2: box.w, y2: box.d });
+                        layerDefs[li].items.push(layout[layout.length - 1]);
+                        totalWeight += box.kg;
+                    }
+                }
+            }
+
+            S.layout = layout; S.layerDefs = layerDefs; S.totalWeight = totalWeight; S.occupancy = occupancy; S.optimized = true;
+            renderLayout(); updateCapacity(); computeEfficiency(); updateSummary();
+            document.getElementById('vis-empty').style.display = 'none';
+            document.getElementById('vis-content').style.display = 'block';
+        }
+
+        // ─── RENDER ─────────────────────────────────
+        function renderLayout() {
+            const c = DECKS[S.deck];
+            const sc = SCALE * S.zoom;
+            const pw = Math.round(c.pw * sc), pd = Math.round(c.pd * sc);
+            const wrap = document.getElementById('vis-content');
+            wrap.innerHTML = '';
+
+            const pw2 = document.createElement('div');
+            pw2.className = 'pallet-wrap animate-in';
+
+            const lbl = document.createElement('div');
+            lbl.className = 'pallet-label';
+            lbl.textContent = `${c.pw} × ${c.pd} cm pallet · ${S.layout.length} boxes · zoom ${S.zoom.toFixed(1)}×`;
+            pw2.appendChild(lbl);
+
+            const outer = document.createElement('div');
+            outer.className = 'pallet-outer';
+            outer.style.width = pw + 'px';
+            outer.style.height = pd + 'px';
+
+            // Cells sorted by layer (bottom first)
+            [...S.layout].sort((a, b) => a.layer - b.layer).forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'grid-cell';
+                el.dataset.id = item.id;
+                el.style.left = Math.round(item.x * sc) + 'px';
+                el.style.top = Math.round(item.y * sc) + 'px';
+                el.style.width = Math.round(item.w * sc) + 'px';
+                el.style.height = Math.round(item.d * sc) + 'px';
+                el.style.zIndex = item.layer;
+                // Layer depth tint
+                const alpha = 0.55 + item.layer * 0.1;
+                el.style.background = colorAlpha(item.color, Math.min(alpha, 0.92));
+                el.style.borderColor = colorAlpha(item.color, 0.5);
+
+                const lbl = document.createElement('div');
+                lbl.className = 'cell-lbl';
+                lbl.textContent = item.name.replace(/ POD Self Locking/, '').replace(/ POD RSC/, '') + '\nL' + item.layer;
+                el.appendChild(lbl);
+
+                el.addEventListener('mousemove', e => showTT(e, item));
+                el.addEventListener('mouseleave', hideTT);
+
+                if (S.isManual) {
+                    el.draggable = true;
+                    el.addEventListener('dragstart', ev => onDragStart(ev, item));
+                    el.addEventListener('dragend', onDragEnd);
+                    el.addEventListener('dblclick', () => removeItem(item.id));
+                }
+                outer.appendChild(el);
+            });
+
+            const dz = document.createElement('div');
+            dz.className = 'drop-zone'; dz.id = 'drop-zone';
+            outer.appendChild(dz);
+
+            const base = document.createElement('div');
+            base.className = 'pallet-base';
+            outer.appendChild(base);
+
+            if (S.isManual) {
+                outer.addEventListener('dragover', onDragOver);
+                outer.addEventListener('drop', onDrop);
+            }
+            pw2.appendChild(outer);
+
+            // Layer chips
+            if (S.layerDefs.length) {
+                const chips = document.createElement('div');
+                chips.className = 'layer-chips';
+                S.layerDefs.forEach((l, i) => {
+                    const ch = document.createElement('div');
+                    ch.className = 'layer-chip';
+                    ch.textContent = `Layer ${i + 1}: ${l.items?.length || 0} boxes · ${l.z}–${l.z + l.h}cm`;
+                    chips.appendChild(ch);
+                });
+                pw2.appendChild(chips);
+            }
+
+            wrap.appendChild(pw2);
+        }
+
+        // ─── DRAG & DROP ────────────────────────────
+        let dragItem = null, dragOffX = 0, dragOffY = 0;
+        function onDragStart(ev, item) {
+            dragItem = item;
+            ev.currentTarget.classList.add('dragging');
+            ev.dataTransfer.effectAllowed = 'move';
+            const r = ev.currentTarget.getBoundingClientRect();
+            dragOffX = ev.clientX - r.left; dragOffY = ev.clientY - r.top;
+            document.getElementById('drop-zone').style.display = 'block';
+        }
+        function onDragEnd(ev) {
+            ev.currentTarget.classList.remove('dragging');
+            document.getElementById('drop-zone').style.display = 'none';
+            dragItem = null;
+        }
+        function onDragOver(ev) {
+            ev.preventDefault();
+            if (!dragItem) return;
+            const sc = SCALE * S.zoom, c = DECKS[S.deck];
+            const r = ev.currentTarget.getBoundingClientRect();
+            const nx = Math.max(0, Math.min((ev.clientX - r.left - dragOffX) / sc, c.pw - dragItem.w));
+            const ny = Math.max(0, Math.min((ev.clientY - r.top - dragOffY) / sc, c.pd - dragItem.d));
+            const dz = document.getElementById('drop-zone');
+            dz.style.left = Math.round(nx * sc) + 'px'; dz.style.top = Math.round(ny * sc) + 'px';
+            dz.style.width = Math.round(dragItem.w * sc) + 'px'; dz.style.height = Math.round(dragItem.d * sc) + 'px';
+        }
+        function onDrop(ev) {
+            ev.preventDefault();
+            if (!dragItem) return;
+            const sc = SCALE * S.zoom, c = DECKS[S.deck];
+            const r = ev.currentTarget.getBoundingClientRect();
+            const nx = Math.round(Math.max(0, Math.min((ev.clientX - r.left - dragOffX) / sc, c.pw - dragItem.w)));
+            const ny = Math.round(Math.max(0, Math.min((ev.clientY - r.top - dragOffY) / sc, c.pd - dragItem.d)));
+            const collides = S.layout.some(it => {
+                if (it.id === dragItem.id || it.layer !== dragItem.layer) return false;
+                return !(nx >= it.x + it.w || nx + dragItem.w <= it.x || ny >= it.y + it.d || ny + dragItem.d <= it.y);
+            });
+            if (!collides) { dragItem.x = nx; dragItem.y = ny; renderLayout(); updateCapacity(); }
+        }
+        function removeItem(id) {
+            const it = S.layout.find(x => x.id === id);
+            if (!it) return;
+            S.layout = S.layout.filter(x => x.id !== id);
+            S.totalWeight = S.layout.reduce((s, i) => s + i.kg, 0);
+            renderLayout(); updateCapacity(); computeEfficiency();
+        }
+
+        // ─── TOOLTIP ────────────────────────────────
+        function showTT(ev, item) {
+            const tt = document.getElementById('tooltip');
+            document.getElementById('tt-name').textContent = item.name;
+            document.getElementById('tt-size').textContent = `${item.w}×${item.d}×${item.h} cm`;
+            document.getElementById('tt-wt').textContent = item.kg + ' kg';
+            document.getElementById('tt-layer').textContent = 'Layer ' + item.layer + ` (z:${item.z}cm)`;
+            document.getElementById('tt-pos').textContent = `x:${item.x} y:${item.y}`;
+            tt.style.left = (ev.clientX + 14) + 'px'; tt.style.top = (ev.clientY - 50) + 'px';
+            tt.classList.add('show');
+        }
+        function hideTT() { document.getElementById('tooltip').classList.remove('show') }
+
+        // ─── CAPACITY ───────────────────────────────
+        function updateCapacity() {
+            const c = DECKS[S.deck];
+            const tw = S.totalWeight || 0;
+            const pct = tw / c.maxW * 100;
+            document.getElementById('g-cur').textContent = tw.toFixed(1);
+            const fill = document.getElementById('g-fill');
+            fill.style.width = Math.min(pct, 100) + '%';
+            fill.className = 'gauge-fill' + (pct > 90 ? ' danger' : pct > 70 ? ' warn' : '');
+            document.getElementById('g-pct').textContent = pct.toFixed(1) + '% used';
+            document.getElementById('r-weight').textContent = Math.max(0, c.maxW - tw).toFixed(1);
+
+            let usedVol = 0;
+            S.layout.forEach(i => usedVol += i.w * i.d * i.h);
+            const maxVol = c.pw * c.pd * c.maxH;
+            document.getElementById('r-vol').textContent = Math.max(0, Math.round((1 - usedVol / maxVol) * 100));
+
+            let maxH = 0;
+            S.layout.forEach(i => { const t = i.z + i.h; if (t > maxH) maxH = t });
+
+            updateForecast(c.maxW - tw, c.maxH - maxH);
+        }
+
+        function updateForecast(remWkg, remH) {
+            const list = document.getElementById('fcst-list');
+            if (!S.optimized) { list.innerHTML = '<div class="fcst-empty">Run optimization to see forecast</div>'; return }
+            list.innerHTML = '';
+            const c = DECKS[S.deck];
+            BOX_TYPES.filter(b => S.chk[b.id] && S.qty[b.id] > 0).forEach(b => {
+                const byW = Math.floor(remWkg / b.kg);
+                const layers = Math.floor(remH / b.h);
+                const byH = layers * Math.floor(c.pw / b.w) * Math.floor(c.pd / b.d);
+
+                const wClass = byW === 0 ? 'red' : byW < 5 ? 'orange' : 'green';
+                const hClass = byH === 0 ? 'red' : byH < 5 ? 'orange' : 'green';
+
+                const row = document.createElement('div');
+                row.className = 'fcst-row';
+                row.innerHTML = `
+      <div class="fcst-row-hd">
+        <div class="fcst-dot" style="background:${b.color}"></div>
+        <div class="fcst-name">${b.name}</div>
+      </div>
+      <div class="fcst-metrics">
+        <div>
+          <div class="fcst-m-label">Weight Limit</div>
+          <div class="fcst-m-val ${wClass}">${byW < 1000 ? byW : '∞'}</div>
+        </div>
+        <div>
+          <div class="fcst-m-label">Height Limit</div>
+          <div class="fcst-m-val ${hClass}">${byH < 1000 ? byH : '∞'}</div>
+        </div>
+      </div>`;
+                list.appendChild(row);
+            });
+            if (!list.children.length) list.innerHTML = '<div class="fcst-empty" style="color:var(--danger)">Pallet is at capacity</div>';
+        }
+
+        // ─── MANUAL TOGGLE ──────────────────────────
+        document.getElementById('btn-manual-toggle').addEventListener('click', () => {
+            S.isManual = !S.isManual;
+            const btn = document.getElementById('btn-manual-toggle');
+            const chip = document.getElementById('mode-chip');
+            const notice = document.getElementById('manual-notice');
+            if (S.isManual) {
+                btn.textContent = 'Switch to Auto';
+                chip.textContent = 'MANUAL MODE'; chip.className = 'mode-chip manual';
+                notice.style.display = 'flex';
+            } else {
+                btn.textContent = 'Switch to Manual';
+                chip.textContent = 'AUTO MODE'; chip.className = 'mode-chip';
+                notice.style.display = 'none';
+            }
+            if (S.optimized) renderLayout();
+        });
+
+        // ─── BUTTONS ────────────────────────────────
+        document.getElementById('btn-optimize').addEventListener('click', runOptimize);
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            S.layout = []; S.layerDefs = []; S.totalWeight = 0; S.occupancy = []; S.optimized = false;
+            document.getElementById('vis-empty').style.display = 'flex';
+            document.getElementById('vis-content').style.display = 'none';
+            document.getElementById('vis-content').innerHTML = '';
+            document.getElementById('sum-eff').textContent = '—';
+            document.getElementById('d-eff').textContent = '—';
+            document.getElementById('fcst-list').innerHTML = '<div class="fcst-empty">Run optimization to see forecast</div>';
+            updateCapacity(); updateSummary();
+        });
+
+        // ─── UTIL ────────────────────────────────────
+        function colorAlpha(hex, a) {
+            const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r},${g},${b},${a})`;
+        }
+
+        // ─── INIT ────────────────────────────────────
+        initBoxList();
+        updateSummary();
+        updatePalletDims();
+        updateCapacity();
+    </script>
+</body>
+
+</html>
