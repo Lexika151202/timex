@@ -990,20 +990,308 @@
             color: #fff
         }
 
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(3px)
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0)
-            }
+        /* ── SETTINGS MODAL ── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
-        .animate-in {
-            animation: fadeIn .25s ease forwards
+        .modal-overlay.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        .settings-modal {
+            background: var(--bg-panel);
+            width: 100%;
+            max-width: 1000px;
+            height: 85vh;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transform: scale(0.95);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border: 1px solid var(--border);
+        }
+
+        .modal-overlay.show .settings-modal {
+            transform: scale(1);
+        }
+
+        .modal-hdr {
+            padding: 24px 32px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #fff;
+        }
+
+        .modal-hdr h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .modal-content-wrap {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            overflow: hidden;
+        }
+
+        .modal-sidebar {
+            background: var(--bg-main);
+            border-right: 1px solid var(--border);
+            padding: 24px 16px;
+        }
+
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav-item {
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .nav-item:hover {
+            background: rgba(0, 102, 255, 0.05);
+            color: var(--primary);
+        }
+
+        .nav-item.active {
+            background: #fff;
+            color: var(--primary);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+        }
+
+        .modal-main {
+            padding: 32px;
+            overflow-y: auto;
+            background: #fff;
+        }
+
+        .settings-sec {
+            display: none;
+            animation: modalFadeIn 0.3s ease;
+        }
+
+        .settings-sec.active {
+            display: block;
+        }
+
+        .sec-hdr {
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sec-hdr h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        /* Entity Cards */
+        .entity-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            padding-bottom: 24px;
+        }
+
+        .entity-card {
+            background: var(--bg-main);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .entity-card:hover {
+            border-color: var(--primary);
+            background: #fff;
+            box-shadow: var(--shadow-md);
+        }
+
+        .card-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .field-group.full {
+            grid-column: 1 / -1;
+        }
+
+        .field-label {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+
+        .input-inline {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: var(--mono);
+            background: #fff;
+            transition: all 0.2s;
+        }
+
+        .input-inline:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
+        }
+
+        .card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+            margin-top: 8px;
+        }
+
+        .toggles-group {
+            display: flex;
+            gap: 24px;
+        }
+
+        .toggle-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .btn-add {
+            background: var(--primary);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-icon-sm {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: #fff;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+
+        .btn-icon-sm:hover {
+            background: rgba(255, 71, 87, 0.1);
+            color: var(--danger);
+            border-color: var(--danger);
+        }
+
+        .modal-ftr {
+            padding: 24px 32px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            background: var(--bg-main);
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 36px;
+            height: 20px;
+        }
+
+        .toggle-switch input {
+            opacity: 0; width: 0; height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--border2);
+            transition: .3s;
+            border-radius: 20px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px; width: 14px;
+            left: 3px; bottom: 3px;
+            background-color: #fff;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--primary);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(16px);
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
@@ -1017,6 +1305,13 @@
             Packing Optimization
         </div>
         <div class="hdr-right">
+            <button class="btn btn-ghost" id="btn-settings" style="display: flex; align-items: center; gap: 8px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+                Settings
+            </button>
             <div class="mode-chip" id="mode-chip">AUTO MODE</div>
             <button class="btn btn-ghost" id="btn-manual-toggle">Switch to Manual</button>
         </div>
@@ -1283,6 +1578,353 @@
     </div>
 
     <script>
+        // ─── SETTINGS LOGIC ─────────────────────────
+        const btnSettings = document.getElementById('btn-settings');
+        const modalOverlay = document.createElement('div');
+        modalOverlay.className = 'modal-overlay';
+        modalOverlay.id = 'settings-modal-overlay';
+        modalOverlay.innerHTML = `
+            <div class="settings-modal">
+                <div class="modal-hdr">
+                    <h2>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+                        Entity Configuration
+                    </h2>
+                    <button class="btn-icon-sm" id="close-modal">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="modal-content-wrap">
+                    <div class="modal-sidebar">
+                        <div class="sidebar-nav">
+                            <div class="nav-item active" data-tab="pallet">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="12" x2="21" y2="12"></line><line x1="12" y1="3" x2="12" y2="21"></line></svg>
+                                Pallets
+                            </div>
+                            <div class="nav-item" data-tab="position">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                                Positions
+                            </div>
+                            <div class="nav-item" data-tab="box">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                                Boxes
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-main">
+                        <!-- PALLET TAB -->
+                        <div class="settings-sec active" id="tab-pallet">
+                            <div class="sec-hdr">
+                                <h3>Pallet Templates</h3>
+                                <button class="btn-add">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                    Add Pallet
+                                </button>
+                            </div>
+                            <div class="entity-grid">
+                                <!-- Pallet Card 1 -->
+                                <div class="entity-card">
+                                    <div class="card-row">
+                                        <div class="field-group full">
+                                            <div class="field-label">Pallet Name</div>
+                                            <input type="text" class="input-inline" value="PMC Standard Cargo Pallet">
+                                        </div>
+                                    </div>
+                                    <div class="card-row">
+                                        <div class="field-group">
+                                            <div class="field-label">Type</div>
+                                            <input type="text" class="input-inline" value="PMC">
+                                        </div>
+                                        <div class="field-group">
+                                            <div class="field-label">Width (cm)</div>
+                                            <input type="number" class="input-inline" value="243.8">
+                                        </div>
+                                        <div class="field-group">
+                                            <div class="field-label">Length (cm)</div>
+                                            <input type="number" class="input-inline" value="317.5">
+                                        </div>
+                                        <div class="field-group">
+                                            <div class="field-label">Weight (kg)</div>
+                                            <input type="number" class="input-inline" value="6804">
+                                        </div>
+                                    </div>
+                                    <div class="card-footer">
+                                        <div class="toggles-group">
+                                            <div class="toggle-item">
+                                                <span>Active</span>
+                                                <label class="toggle-switch">
+                                                    <input type="checkbox" checked>
+                                                    <span class="slider"></span>
+                                                </label>
+                                            </div>
+                                            <div class="toggle-item">
+                                                <span>Default</span>
+                                                <label class="toggle-switch">
+                                                    <input type="checkbox" checked>
+                                                    <span class="slider"></span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <button class="btn-icon-sm">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <!-- Pallet Card 2 -->
+                                <div class="entity-card">
+                                    <div class="card-row">
+                                        <div class="field-group full">
+                                            <div class="field-label">Pallet Name</div>
+                                            <input type="text" class="input-inline" value="PAG Heavy Duty Pallet">
+                                        </div>
+                                    </div>
+                                    <div class="card-row">
+                                        <div class="field-group">
+                                            <div class="field-label">Type</div>
+                                            <input type="text" class="input-inline" value="PAG">
+                                        </div>
+                                        <div class="field-group">
+                                            <div class="field-label">Width (cm)</div>
+                                            <input type="number" class="input-inline" value="223.5">
+                                        </div>
+                                        <div class="field-group">
+                                            <div class="field-label">Length (cm)</div>
+                                            <input type="number" class="input-inline" value="317.5">
+                                        </div>
+                                        <div class="field-group">
+                                            <div class="field-label">Weight (kg)</div>
+                                            <input type="number" class="input-inline" value="4626">
+                                        </div>
+                                    </div>
+                                    <div class="card-footer">
+                                        <div class="toggles-group">
+                                            <div class="toggle-item">
+                                                <span>Active</span>
+                                                <label class="toggle-switch">
+                                                    <input type="checkbox" checked>
+                                                    <span class="slider"></span>
+                                                </label>
+                                            </div>
+                                            <div class="toggle-item">
+                                                <span>Default</span>
+                                                <label class="toggle-switch">
+                                                    <input type="checkbox">
+                                                    <span class="slider"></span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <button class="btn-icon-sm">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- POSITION TAB -->
+                        <div class="settings-sec" id="tab-position">
+                            <div class="sec-hdr">
+                                <h3>Deck Positions</h3>
+                                <button class="btn-add">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                    Add Position
+                                </button>
+                            </div>
+                            <div class="entity-grid">
+                                <div class="entity-card">
+                                    <div class="card-row">
+                                        <div class="field-group full">
+                                            <div class="field-label">Position Name</div>
+                                            <input type="text" class="input-inline" value="Lower Deck Compartment A">
+                                        </div>
+                                    </div>
+                                    <div class="card-row">
+                                        <div class="field-group">
+                                            <div class="field-label">Max Height (cm)</div>
+                                            <input type="number" class="input-inline" value="120">
+                                        </div>
+                                        <div class="field-group">
+                                            <div class="field-label">Max Weight (kg)</div>
+                                            <input type="number" class="input-inline" value="3175">
+                                        </div>
+                                    </div>
+                                    <div class="card-footer">
+                                        <div class="toggles-group">
+                                            <div class="toggle-item">
+                                                <span>Active</span>
+                                                <label class="toggle-switch">
+                                                    <input type="checkbox" checked>
+                                                    <span class="slider"></span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <button class="btn-icon-sm">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="entity-card">
+                                    <div class="card-row">
+                                        <div class="field-group full">
+                                            <div class="field-label">Position Name</div>
+                                            <input type="text" class="input-inline" value="Main Deck Section B (Heavy Load)">
+                                        </div>
+                                    </div>
+                                    <div class="card-row">
+                                        <div class="field-group">
+                                            <div class="field-label">Max Height (cm)</div>
+                                            <input type="number" class="input-inline" value="160">
+                                        </div>
+                                        <div class="field-group">
+                                            <div class="field-label">Max Weight (kg)</div>
+                                            <input type="number" class="input-inline" value="6804">
+                                        </div>
+                                    </div>
+                                    <div class="card-footer">
+                                        <div class="toggles-group">
+                                            <div class="toggle-item">
+                                                <span>Active</span>
+                                                <label class="toggle-switch">
+                                                    <input type="checkbox" checked>
+                                                    <span class="slider"></span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <button class="btn-icon-sm">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- BOX TAB -->
+                        <div class="settings-sec" id="tab-box">
+                            <div class="sec-hdr">
+                                <h3>Box Catalog</h3>
+                                <button class="btn-add">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                    Add Box
+                                </button>
+                            </div>
+                            <div class="entity-grid">
+                                <div class="entity-card">
+                                    <div class="card-row">
+                                        <div class="field-group full">
+                                            <div class="field-label">Box Type Name</div>
+                                            <input type="text" class="input-inline" value="2-Pack POD Self Locking Display Box">
+                                        </div>
+                                    </div>
+                                    <div class="card-row">
+                                        <div class="field-group">
+                                            <div class="field-label">Width (cm)</div>
+                                            <input type="number" class="input-inline" value="14.2">
+                                        </div>
+                                        <div class="field-group">
+                                            <div class="field-label">Length (cm)</div>
+                                            <input type="number" class="input-inline" value="8.9">
+                                        </div>
+                                        <div class="field-group">
+                                            <div class="field-label">Height (cm)</div>
+                                            <input type="number" class="input-inline" value="11">
+                                        </div>
+                                        <div class="field-group">
+                                            <div class="field-label">Weight (kg)</div>
+                                            <input type="number" class="input-inline" value="0.42">
+                                        </div>
+                                    </div>
+                                    <div class="card-footer">
+                                        <div class="toggles-group">
+                                            <div class="toggle-item">
+                                                <span>Active</span>
+                                                <label class="toggle-switch">
+                                                    <input type="checkbox" checked>
+                                                    <span class="slider"></span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <button class="btn-icon-sm">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="entity-card">
+                                    <div class="card-row">
+                                        <div class="field-group full">
+                                            <div class="field-label">Box Type Name</div>
+                                            <input type="text" class="input-inline" value="10-Pack POD Standard Industrial Container">
+                                        </div>
+                                    </div>
+                                    <div class="card-row">
+                                        <div class="field-group">
+                                            <div class="field-label">Width (cm)</div>
+                                            <input type="number" class="input-inline" value="34.5">
+                                        </div>
+                                        <div class="field-group">
+                                            <div class="field-label">Length (cm)</div>
+                                            <input type="number" class="input-inline" value="16.4">
+                                        </div>
+                                        <div class="field-group">
+                                            <div class="field-label">Height (cm)</div>
+                                            <input type="number" class="input-inline" value="11">
+                                        </div>
+                                        <div class="field-group">
+                                            <div class="field-label">Weight (kg)</div>
+                                            <input type="number" class="input-inline" value="1.85">
+                                        </div>
+                                    </div>
+                                    <div class="card-footer">
+                                        <div class="toggles-group">
+                                            <div class="toggle-item">
+                                                <span>Active</span>
+                                                <label class="toggle-switch">
+                                                    <input type="checkbox" checked>
+                                                    <span class="slider"></span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <button class="btn-icon-sm">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-ftr">
+                    <button class="btn btn-ghost" id="cancel-settings">Discard Changes</button>
+                    <button class="btn btn-optimize" id="save-settings">Save Changes</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modalOverlay);
+
+        btnSettings.addEventListener('click', () => modalOverlay.classList.add('show'));
+        document.getElementById('close-modal').addEventListener('click', () => modalOverlay.classList.remove('show'));
+        document.getElementById('cancel-settings').addEventListener('click', () => modalOverlay.classList.remove('show'));
+        document.getElementById('save-settings').addEventListener('click', () => {
+            modalOverlay.classList.remove('show');
+            // Logic to update data would go here
+        });
+
+        const navItems = modalOverlay.querySelectorAll('.nav-item');
+        const sections = modalOverlay.querySelectorAll('.settings-sec');
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                navItems.forEach(i => i.classList.remove('active'));
+                sections.forEach(s => s.classList.remove('active'));
+                item.classList.add('active');
+                document.getElementById('tab-' + item.dataset.tab).classList.add('active');
+            });
+        });
+
         // ─── DATA ───────────────────────────────────
         const BOX_TYPES = [
             { id: 'b2', name: '2-Pack POD Self Locking', w: 14.2, d: 8.9, h: 11, kg: 0.42, color: '#3B82F6' },
