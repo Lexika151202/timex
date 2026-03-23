@@ -8,6 +8,9 @@
     <link
         href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
         rel="stylesheet">
+    <!-- 3D Visualization Dependencies -->
+    <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <style>
         * {
             margin: 0;
@@ -314,6 +317,25 @@
             flex-shrink: 0
         }
 
+        .box-status {
+            font-size: 10px;
+            margin-top: 3px;
+            font-weight: 600;
+        }
+
+        .text-red {
+            color: #ef4444;
+        }
+
+        .text-green {
+            color: #10b981;
+        }
+
+        .box-row.short {
+            border-left: 3px solid #ef4444;
+            background: #fffafa;
+        }
+
         .box-info .box-name {
             font-size: 12px;
             font-weight: 600;
@@ -362,7 +384,8 @@
             font-weight: 600;
             background: transparent;
             color: var(--text-primary);
-            -moz-appearance: textfield
+            -moz-appearance: textfield;
+            appearance: textfield;
         }
 
         .qty-n::-webkit-inner-spin-button {
@@ -1029,6 +1052,57 @@
             transform: scale(1);
         }
 
+        @keyframes highlightRecord {
+            0% {
+                background: rgba(59, 130, 246, 0.2);
+                border-color: var(--primary);
+                transform: translateY(-10px);
+            }
+
+            100% {
+                background: var(--bg-panel);
+                border-color: var(--border);
+                transform: translateY(0);
+            }
+        }
+
+        .new-record-highlight {
+            animation: highlightRecord 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+            z-index: 10;
+        }
+
+        .search-wrap {
+            position: relative;
+            flex: 1;
+            max-width: 300px;
+        }
+
+        .search-wrap input {
+            width: 100%;
+            padding: 10px 16px 10px 38px;
+            background: var(--bg-main);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 13px;
+            color: var(--text-primary);
+            transition: all 0.2s;
+        }
+
+        .search-wrap input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            outline: none;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
         .modal-hdr {
             padding: 24px 32px;
             border-bottom: 1px solid var(--border);
@@ -1128,18 +1202,19 @@
         }
 
         .entity-card {
-            background: var(--bg-main);
+            background: #fff;
             border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 20px;
-            transition: all 0.2s;
+            border-radius: 16px;
+            padding: 24px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
         }
 
         .entity-card:hover {
             border-color: var(--primary);
-            background: #fff;
-            box-shadow: var(--shadow-md);
+            box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.1);
+            transform: translateY(-2px);
         }
 
         .card-row {
@@ -1188,14 +1263,19 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding-top: 16px;
-            border-top: 1px solid var(--border);
-            margin-top: 8px;
+            padding-top: 14px;
+            margin-top: 12px;
+            border-top: 1px solid var(--border-light);
         }
 
-        .toggles-group {
+        .toggle-item {
             display: flex;
-            gap: 24px;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            user-select: none;
         }
 
         .toggle-item {
@@ -1251,47 +1331,125 @@
             background: var(--bg-main);
         }
 
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 10001;
+        }
+
+        .toast {
+            background: #fff;
+            border-left: 4px solid var(--primary);
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            min-width: 300px;
+            animation: toastSlideIn 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+            position: relative;
+        }
+
+        .toast.success {
+            border-color: #2ed573;
+        }
+
+        .toast.error {
+            border-color: #ff4757;
+        }
+
+        .toast.info {
+            border-color: var(--primary);
+        }
+
+        @keyframes toastSlideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .toast.fade-out {
+            animation: toastFadeOut 0.3s forwards;
+        }
+
+        @keyframes toastFadeOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
         .toggle-switch {
             position: relative;
             display: inline-block;
-            width: 36px;
-            height: 20px;
+            width: 42px;
+            height: 24px;
         }
 
         .toggle-switch input {
-            opacity: 0; width: 0; height: 0;
+            opacity: 0;
+            width: 0;
+            height: 0;
         }
 
         .slider {
             position: absolute;
             cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: var(--border2);
-            transition: .3s;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #E2E8F0;
+            transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
             border-radius: 20px;
         }
 
         .slider:before {
             position: absolute;
             content: "";
-            height: 14px; width: 14px;
-            left: 3px; bottom: 3px;
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
             background-color: #fff;
-            transition: .3s;
+            transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
             border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
-        input:checked + .slider {
+        input:checked+.slider {
             background-color: var(--primary);
         }
 
-        input:checked + .slider:before {
-            transform: translateX(16px);
+        input:checked+.slider:before {
+            transform: translateX(18px);
         }
 
         @keyframes modalFadeIn {
-            from { opacity: 0; transform: translateY(8px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     </style>
 </head>
@@ -1308,7 +1466,9 @@
             <button class="btn btn-ghost" id="btn-settings" style="display: flex; align-items: center; gap: 8px;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="3"></circle>
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    <path
+                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                    </path>
                 </svg>
                 Settings
             </button>
@@ -1329,115 +1489,16 @@
             <div class="scroll">
 
                 <div class="sec">
+                    <div class="sec-title"><span>Select Pallet Template</span></div>
+                    <div class="deck-opts" id="pallet-opts">
+                        <!-- Dynamic Pallets -->
+                    </div>
+                </div>
+
+                <div class="sec">
                     <div class="sec-title"><span>Select Deck Position</span></div>
-                    <div class="deck-opts" id="deck-opts">
-                        <div class="deck-opt sel" data-deck="standard">
-                            <div class="deck-opt-hd">
-                                <span class="deck-opt-name">Standard Pallet Only</span>
-                                <span class="deck-badge">N/A</span>
-                            </div>
-                            <div class="deck-specs">
-                                <div class="deck-spec">
-                                    <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
-                                    Type: PMC
-                                </div>
-                                <div class="deck-spec">
-                                    <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="2">
-                                        <path
-                                            d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
-                                        </path>
-                                    </svg>
-                                    Weight: 6,804kg
-                                </div>
-                                <div class="deck-spec">
-                                    <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
-                                    Width: 243.8cm
-                                </div>
-                                <div class="deck-spec">
-                                    <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
-                                    Length: 317.5cm
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="deck-opt" data-deck="lower">
-                            <div class="deck-opt-hd">
-                                <span class="deck-opt-name">Lower Deck</span>
-                                <!-- <span class="deck-badge">Standard</span> -->
-                            </div>
-                            <div class="deck-specs">
-                                <div class="deck-spec">
-                                    <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="2">
-                                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                                        <polyline points="19 12 12 19 5 12"></polyline>
-                                    </svg>
-                                    Height: 120cm
-                                </div>
-                                <div class="deck-spec">
-                                    <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="2">
-                                        <path
-                                            d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
-                                        </path>
-                                    </svg>
-                                    Weight: 3,175kg
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="deck-opt" data-deck="main">
-                            <div class="deck-opt-hd">
-                                <span class="deck-opt-name">Main Deck</span>
-                                <!-- <span class="deck-badge">Premium</span> -->
-                            </div>
-                            <div class="deck-specs">
-                                <div class="deck-spec">
-                                    <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="2">
-                                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                                        <polyline points="19 12 12 19 5 12"></polyline>
-                                    </svg>
-                                    Height: 160cm
-                                </div>
-                                <div class="deck-spec">
-                                    <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="2">
-                                        <path
-                                            d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
-                                        </path>
-                                    </svg>
-                                    Weight: 6,804kg
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="deck-opt" data-deck="freighter">
-                            <div class="deck-opt-hd">
-                                <span class="deck-opt-name">Main Deck Freighter</span>
-                                <!-- <span class="deck-badge">Cargo</span> -->
-                            </div>
-                            <div class="deck-specs">
-                                <div class="deck-spec">
-                                    <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="2">
-                                        <line x1="12" y1="5" x2="12" y2="19"></line>
-                                        <polyline points="19 12 12 19 5 12"></polyline>
-                                    </svg>
-                                    Height: 240cm
-                                </div>
-                                <div class="deck-spec">
-                                    <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="2">
-                                        <path
-                                            d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z">
-                                        </path>
-                                    </svg>
-                                    Weight: 11,340kg
-                                </div>
-                            </div>
-                        </div>
+                    <div class="deck-opts" id="position-opts">
+                        <!-- Dynamic Positions -->
                     </div>
                 </div>
 
@@ -1460,22 +1521,32 @@
         <div class="center">
             <div class="center-hd">
                 <div>
-                    <div class="center-title">3D Pallet Preview</div>
-                    <div class="center-sub" id="center-sub">Interactive visualization of optimized layout</div>
+                    <div class="center-title" id="vis-title">3D Pallet Preview</div>
+                    <div class="center-sub" id="center-subtitle">Interactive visualization of optimized layout</div>
                 </div>
-                <div class="summary-bar-dark">
-                    <div class="sb-metrics">
-                        <div class="sb-metric">
-                            <div class="sb-val" id="sum-boxes">0</div>
-                            <div class="sb-label">Total Boxes</div>
-                        </div>
-                        <div class="sb-metric">
-                            <div class="sb-val" id="sum-types">0</div>
-                            <div class="sb-label">Box Types</div>
-                        </div>
-                        <div class="sb-metric">
-                            <div class="sb-val green" id="sum-eff">—</div>
-                            <div class="sb-label">Space Efficiency</div>
+                <div style="display:flex; gap:10px; align-items:center">
+                    <div class="view-toggle"
+                        style="background:var(--bg-main); padding:4px; border-radius:8px; border:1px solid var(--border); display:flex; gap:4px">
+                        <button class="btn btn-ghost active" id="btn-view-3d"
+                            style="padding:6px 12px; font-size:11px; border:none; background:var(--primary); color:#fff">3D
+                            View</button>
+                        <button class="btn btn-ghost" id="btn-view-2d"
+                            style="padding:6px 12px; font-size:11px; border:none">2D View</button>
+                    </div>
+                    <div class="summary-bar-dark">
+                        <div class="sb-metrics">
+                            <div class="sb-metric">
+                                <div class="sb-val" id="sum-boxes">0</div>
+                                <div class="sb-label">Total Boxes</div>
+                            </div>
+                            <div class="sb-metric">
+                                <div class="sb-val" id="sum-types">0</div>
+                                <div class="sb-label">Box Types</div>
+                            </div>
+                            <div class="sb-metric">
+                                <div class="sb-val green" id="sum-eff">—</div>
+                                <div class="sb-label">Space Efficiency</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1487,13 +1558,15 @@
                     <line x1="12" y1="8" x2="12" y2="12" />
                     <line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
-                <strong>Manual Mode aktif:</strong>&nbsp;Drag boxes to rearrange.
+                <strong>Manual Mode active:</strong>&nbsp;Drag boxes to rearrange (2D View only).
             </div>
 
-            <div class="canvas-wrap" id="canvas-wrap">
-                <div class="canvas-bg"></div>
+            <div class="canvas-wrap" id="canvas-wrap"
+                style="padding:0; background:#111; position:relative; flex:1; display:block; overflow:hidden">
+                <div id="three-container" style="position:absolute; inset:0; cursor:grab; display:none;"></div>
 
-                <div class="empty-vis" id="vis-empty">
+                <div class="empty-vis" id="vis-empty"
+                    style="position:absolute; inset:0; z-index:10; background:var(--bg-panel); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px">
                     <svg width="100" height="100" viewBox="0 0 200 200" fill="none">
                         <rect x="40" y="80" width="120" height="80" rx="4" fill="#E2E8F0" />
                         <rect x="50" y="50" width="40" height="30" rx="2" fill="#94A3B8" />
@@ -1506,11 +1579,15 @@
                         <line x1="110" y1="20" x2="100" y2="15" stroke="#CBD5E1" stroke-width="2" />
                     </svg>
                     <div class="empty-title">No optimization result yet</div>
-                    <div class="empty-sub">Select deck position and box types, then click <strong
-                            style="color:var(--primary)">Optimize Layout</strong> to generate the preview</div>
+                    <div class="empty-sub"
+                        style="text-align:center; max-width:240px; color:var(--text-muted); font-size:12px; line-height:1.6">
+                        Select deck position and box types, then click <strong style="color:var(--primary)">Optimize
+                            Layout</strong> to generate the preview</div>
                 </div>
 
-                <div id="vis-content" style="display:none;position:relative;z-index:1"></div>
+                <div id="vis-content"
+                    style="display:none; position:absolute; inset:0; z-index:5; background:var(--bg-main); padding:28px; overflow:auto; display:flex; align-items:center; justify-content:center">
+                </div>
             </div>
 
 
@@ -1528,7 +1605,7 @@
                     <div class="gauge-hd">
                         <span class="gauge-label">Current Load</span>
                         <span class="gauge-vals"><span class="gauge-cur" id="g-cur">0</span><span class="gauge-max"
-                                id="g-max"> / 3,175 kg</span></span>
+                                id="g-max"> / 4,000 kg</span></span>
                     </div>
                     <div class="gauge-track">
                         <div class="gauge-fill" id="g-fill" style="width:0%"></div>
@@ -1541,7 +1618,7 @@
                     <div class="cap-grid">
                         <div class="cap-card">
                             <div class="cap-card-label">Weight Left</div>
-                            <div class="cap-card-val"><span id="r-weight">3,175</span><span
+                            <div class="cap-card-val"><span id="r-weight">4,000</span><span
                                     class="cap-card-unit">kg</span></div>
                             <div class="cap-card-sub">Available to load</div>
                         </div>
@@ -1556,7 +1633,7 @@
 
                 <div class="r-sec">
                     <div class="r-sec-title">Additional Box Forecast</div>
-                    <div class="fcst-intro">Estimated boxes that can still fit based on remaining weight & height</div>
+                    <div class="fcst-intro">Estimated boxes based on remaining weight & height</div>
                     <div class="fcst-list" id="fcst-list">
                         <div class="fcst-empty">Run optimization to see forecast</div>
                     </div>
@@ -1576,9 +1653,514 @@
         <div class="tt-row">Layer: <span id="tt-layer"></span></div>
         <div class="tt-row">Position: <span id="tt-pos"></span></div>
     </div>
+    <div class="toast-container" id="toast-container"></div>
 
+    <!-- 3D Visualization Script -->
     <script>
-        // ─── SETTINGS LOGIC ─────────────────────────
+        let scene3D, camera3D, renderer3D, controls3D, palletGroup;
+        let is3DVisible = true;
+
+        function init3D() {
+            const container = document.getElementById('three-container');
+            if (!container) return;
+
+            if (!window.THREE) {
+                console.error('THREE not loaded');
+                return;
+            }
+            if (renderer3D) return; // Already initialized
+
+            // Force container to be visible temporarily to get dimensions
+            const wasHidden = container.style.display === 'none';
+            container.style.display = 'block';
+
+            const w = container.offsetWidth || container.parentElement.offsetWidth || 800;
+            const h = container.offsetHeight || container.parentElement.offsetHeight || 600;
+
+            if (wasHidden) container.style.display = 'none';
+
+            try {
+                scene3D = new THREE.Scene();
+                scene3D.background = new THREE.Color(0x1a1a2e);
+
+                camera3D = new THREE.PerspectiveCamera(45, w / h, 1, 20000);
+                camera3D.position.set(1000, 800, 1000);
+                camera3D.lookAt(0, 0, 0);
+
+                renderer3D = new THREE.WebGLRenderer({ antialias: true });
+                renderer3D.setPixelRatio(window.devicePixelRatio);
+                renderer3D.setSize(w, h);
+                renderer3D.domElement.style.width = '100%';
+                renderer3D.domElement.style.height = '100%';
+                container.innerHTML = '';
+                container.appendChild(renderer3D.domElement);
+
+                const OC = window.OrbitControls || THREE.OrbitControls;
+                if (OC) {
+                    controls3D = new OC(camera3D, renderer3D.domElement);
+                    controls3D.enableDamping = true;
+                    controls3D.dampingFactor = 0.05;
+                }
+
+                scene3D.add(new THREE.AmbientLight(0xffffff, 0.6));
+                const dl = new THREE.DirectionalLight(0xffffff, 1);
+                dl.position.set(1000, 1500, 500);
+                scene3D.add(dl);
+                const dl2 = new THREE.DirectionalLight(0x8888ff, 0.3);
+                dl2.position.set(-1000, 200, -500);
+                scene3D.add(dl2);
+
+                palletGroup = new THREE.Group();
+                scene3D.add(palletGroup);
+
+                const grid = new THREE.GridHelper(3000, 60, 0x3a3a5c, 0x2a2a3c);
+                grid.position.y = -1;
+                scene3D.add(grid);
+
+                animate3D();
+                console.log('init3D: SUCCESS, size', w, 'x', h);
+            } catch (err) {
+                console.error('init3D FAILED:', err);
+            }
+        }
+
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+            if (controls3D) controls3D.update();
+            if (renderer3D && scene3D && camera3D) {
+                renderer3D.render(scene3D, camera3D);
+            }
+        }
+
+        function render3DLayout() {
+            if (!palletGroup || !renderer3D) return;
+
+            // Get container dimensions (it may be hidden)
+            const container = document.getElementById('three-container');
+            const parent = container ? container.parentElement : null;
+            const w = (container && container.offsetWidth) || (parent && parent.offsetWidth) || 800;
+            const h = (container && container.offsetHeight) || (parent && parent.offsetHeight) || 600;
+
+            // Update camera and renderer
+            camera3D.aspect = w / h;
+            camera3D.updateProjectionMatrix();
+            renderer3D.setSize(w, h);
+
+            while (palletGroup.children.length > 0) {
+                palletGroup.remove(palletGroup.children[0]);
+            }
+
+            const S = window.S;
+            const settingsData = window.settingsData;
+            if (!S || !settingsData) return;
+
+            const p = settingsData.pallets.find(i => i.id === S.palletId);
+            const pos = settingsData.positions.find(i => i.id === S.positionId); // may be null
+            if (!p) return;
+
+            // Pallet base
+            const palletBase = new THREE.Mesh(
+                new THREE.BoxGeometry(p.width, 10, p.length),
+                new THREE.MeshLambertMaterial({ color: 0xcccccc })
+            );
+            palletBase.position.y = -5;
+            palletGroup.add(palletBase);
+
+            // Bounds Wireframe (only when deck position is set)
+            const heightForBounds = pos ? pos.height : (S.actualHeight || 0);
+            if (heightForBounds > 0) {
+                const boundsGeom = new THREE.BoxGeometry(p.width, heightForBounds, p.length);
+                const edges = new THREE.EdgesGeometry(boundsGeom);
+                const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x666666, transparent: true, opacity: pos ? 0.5 : 0.2 }));
+                line.position.y = heightForBounds / 2;
+                palletGroup.add(line);
+            }
+
+            // Boxes
+            S.layout.forEach(item => {
+                const boxGeom = new THREE.BoxGeometry(item.w - 0.4, item.h - 0.4, item.d - 0.4);
+                const boxMat = new THREE.MeshLambertMaterial({ color: item.color || 0x3B82F6 });
+                const boxMesh = new THREE.Mesh(boxGeom, boxMat);
+
+                boxMesh.position.x = item.x + item.w / 2 - p.width / 2;
+                boxMesh.position.y = item.z + item.h / 2;
+                boxMesh.position.z = item.y + item.d / 2 - p.length / 2;
+                palletGroup.add(boxMesh);
+
+                const bEdges = new THREE.EdgesGeometry(boxGeom);
+                const bLine = new THREE.LineSegments(bEdges, new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.2 }));
+                bLine.position.copy(boxMesh.position);
+                palletGroup.add(bLine);
+            });
+
+            // Auto Camera - use deck height or actual stacked height
+            const heightRef = pos ? pos.height : (S.actualHeight || p.length);
+            const dist = Math.max(p.width, p.length, heightRef) * 1.6;
+            camera3D.position.set(dist, dist * 0.9, dist);
+            if (controls3D) {
+                controls3D.target.set(0, heightRef / 3, 0);
+                controls3D.update();
+            }
+        }
+
+        window.render3DLayout = render3DLayout;
+        window.init3D = init3D;
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // ─── SUPABASE CONFIG ────────────────────────
+        const SUPABASE_URL = "https://dkdqtccvizocftrbvpfx.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRrZHF0Y2N2aXpvY2Z0cmJ2cGZ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwODU4NzIsImV4cCI6MjA4ODY2MTg3Mn0.oJ2yZHWhdWb5DdBOVVDyKe6egxNN5Ce37G7ztctTceA";
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // ─── DATA DEFAULTS ──────────────────────────
+        const BOX_TYPES = [
+            { id: 'b2', name: '2-Pack POD Self Locking', w: 14.2, d: 8.9, h: 11, kg: 0.42, color: '#3B82F6' },
+            { id: 'b4', name: '4-Pack POD Display Box', w: 18.2, d: 12.5, h: 11, kg: 0.85, color: '#10B981' },
+            { id: 'b6', name: '6-Pack POD Standard Tray', w: 22.5, d: 14.8, h: 12, kg: 1.25, color: '#F59E0B' },
+            { id: 'b10', name: '10-Pack POD Distribution Box', w: 34.5, d: 24.5, h: 15, kg: 2.5, color: '#EF4444' },
+            { id: 'b25', name: '25-Pack POD Bulk Container', w: 45, d: 35, h: 25, kg: 5.8, color: '#8B5CF6' }
+        ];
+
+        const SCALE = 2.8, MARGIN = 0;
+        const DFLT_QTY = { b2: 120, b4: 80, b6: 45, b10: 24, b15: 12, b25: 8, b40: 0, b50: 0 };
+        const DFLT_CHK = { b2: true, b4: true, b6: false, b10: true, b15: false, b25: true, b40: false, b50: false };
+
+        let settingsData = { pallets: [], positions: [], boxes: [] };
+        window.settingsData = settingsData; // Expose
+        let searchQueries = { pallets: '', positions: '', boxes: '' };
+
+        // ─── SUPABASE SYNC ─────────────────────────
+        async function fetchSettings() {
+            try {
+                const [pRes, psRes, bRes] = await Promise.all([
+                    supabaseClient.from('pallets').select('*').order('created_at', { ascending: false }),
+                    supabaseClient.from('positions').select('*').order('created_at', { ascending: false }),
+                    supabaseClient.from('boxes').select('*').order('created_at', { ascending: false })
+                ]);
+
+                if (pRes.error) throw pRes.error;
+                if (psRes.error) throw psRes.error;
+                if (bRes.error) throw bRes.error;
+
+                settingsData.pallets = pRes.data;
+                settingsData.positions = psRes.data;
+                settingsData.boxes = bRes.data;
+
+                // Set initial selection if none
+                if (settingsData.pallets.length > 0 && !S.palletId) S.palletId = settingsData.pallets.find(p => p.active)?.id || settingsData.pallets[0].id;
+                if (settingsData.positions.length > 0 && !S.positionId) S.positionId = settingsData.positions.find(p => p.active)?.id || settingsData.positions[0].id;
+
+                renderAll();
+                initConfigPanel();
+                initBoxList(); // Added to refresh main screen box list
+                updatePalletDims();
+                updateCapacity();
+            } catch (err) {
+                console.error("Fetch Error:", err);
+                showToast("Failed to fetch data from Supabase", "error");
+            }
+        }
+
+        function renderAll() {
+            renderPallets();
+            renderPositions();
+            renderBoxes();
+        }
+
+        // ─── TOAST NOTIFICATION ─────────────────────
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+
+            let icon = '';
+            if (type === 'success') icon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2ed573" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+            if (type === 'error') icon = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff4757" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>';
+
+            toast.innerHTML = `${icon} <span>${message}</span>`;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('fade-out');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // ─── SETTINGS RENDER LOGIC ──────────────────
+        function renderPallets() {
+            const grid = document.querySelector('#tab-pallet .entity-grid');
+            if (!grid) return;
+            const q = searchQueries.pallets.toLowerCase();
+            const filtered = settingsData.pallets.filter(p => p.name.toLowerCase().includes(q) || p.type.toLowerCase().includes(q));
+
+            if (filtered.length === 0 && q) {
+                grid.innerHTML = '<div class="fcst-empty" style="grid-column: 1/-1">No pallets match your search.</div>';
+                return;
+            }
+
+            grid.innerHTML = filtered.map(p => `
+                <div class="entity-card ${p._new ? 'new-record-highlight' : ''}" data-id="${p.id}" ${p._new ? 'data-just-added="true"' : ''}>
+                    <div class="card-row">
+                        <div class="field-group full">
+                            <div class="field-label">Pallet Template Name</div>
+                            <input type="text" class="input-inline" value="${p.name}" onchange="updateEntity('pallets', '${p.id}', 'name', this.value)">
+                        </div>
+                    </div>
+                    <div class="card-row">
+                        <div class="field-group">
+                            <div class="field-label">Type</div>
+                            <input type="text" class="input-inline" value="${p.type}" onchange="updateEntity('pallets', '${p.id}', 'type', this.value)">
+                        </div>
+                        <div class="field-group">
+                            <div class="field-label">Width (cm)</div>
+                            <input type="number" class="input-inline" value="${p.width}" onchange="updateEntity('pallets', '${p.id}', 'width', parseFloat(this.value))">
+                        </div>
+                        <div class="field-group">
+                            <div class="field-label">Length (cm)</div>
+                            <input type="number" class="input-inline" value="${p.length}" onchange="updateEntity('pallets', '${p.id}', 'length', parseFloat(this.value))">
+                        </div>
+                        <div class="field-group">
+                            <div class="field-label">Max Load (kg)</div>
+                            <input type="number" class="input-inline" value="${p.weight}" onchange="updateEntity('pallets', '${p.id}', 'weight', parseFloat(this.value))">
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="toggle-item">
+                            <span>Active Status</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" ${p.active ? 'checked' : ''} onchange="updateEntity('pallets', '${p.id}', 'active', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <button class="btn-icon-sm" onclick="deleteEntity('pallets', '${p.id}')" title="Delete Pallet">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            // If a new item was just added, it will be the first one
+            const firstCard = grid.firstElementChild;
+            if (firstCard && firstCard.dataset.justAdded === "true") {
+                firstCard.classList.add('new-record-highlight');
+                const nameInput = firstCard.querySelector('input');
+                if (nameInput) setTimeout(() => nameInput.focus(), 100);
+                setTimeout(() => firstCard.removeAttribute('data-just-added'), 2000);
+            }
+        }
+
+        function renderPositions() {
+            const grid = document.querySelector('#tab-position .entity-grid');
+            if (!grid) return;
+            const q = searchQueries.positions.toLowerCase();
+            const filtered = settingsData.positions.filter(pos => pos.name.toLowerCase().includes(q));
+
+            if (filtered.length === 0 && q) {
+                grid.innerHTML = '<div class="fcst-empty" style="grid-column: 1/-1">No positions match your search.</div>';
+                return;
+            }
+
+            grid.innerHTML = filtered.map(pos => `
+                <div class="entity-card ${pos._new ? 'new-record-highlight' : ''}" data-id="${pos.id}" ${pos._new ? 'data-just-added="true"' : ''}>
+                    <div class="card-row">
+                        <div class="field-group full">
+                            <div class="field-label">Position Name</div>
+                            <input type="text" class="input-inline" value="${pos.name}" onchange="updateEntity('positions', '${pos.id}', 'name', this.value)">
+                        </div>
+                    </div>
+                    <div class="card-row">
+                        <div class="field-group">
+                            <div class="field-label">Max Height (cm)</div>
+                            <input type="number" class="input-inline" value="${pos.height}" onchange="updateEntity('positions', '${pos.id}', 'height', parseFloat(this.value))">
+                        </div>
+                        <div class="field-group">
+                            <div class="field-label">Max Weight (kg)</div>
+                            <input type="number" class="input-inline" value="${pos.weight}" onchange="updateEntity('positions', '${pos.id}', 'weight', parseFloat(this.value))">
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="toggle-item">
+                            <span>Active</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" ${pos.active ? 'checked' : ''} onchange="updateEntity('positions', '${pos.id}', 'active', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <button class="btn-icon-sm" onclick="deleteEntity('positions', '${pos.id}')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            const firstCard = grid.firstElementChild;
+            if (firstCard && firstCard.dataset.justAdded === "true") {
+                const nameInput = firstCard.querySelector('input');
+                if (nameInput) setTimeout(() => nameInput.focus(), 100);
+                setTimeout(() => {
+                    firstCard.removeAttribute('data-just-added');
+                    settingsData.positions.forEach(p => delete p._new);
+                }, 2000);
+            }
+        }
+
+        function renderBoxes() {
+            const grid = document.querySelector('#tab-box .entity-grid');
+            if (!grid) return;
+            const q = searchQueries.boxes.toLowerCase();
+            const filtered = settingsData.boxes.filter(b => b.name.toLowerCase().includes(q));
+
+            if (filtered.length === 0 && q) {
+                grid.innerHTML = '<div class="fcst-empty" style="grid-column: 1/-1">No boxes match your search.</div>';
+                return;
+            }
+
+            grid.innerHTML = filtered.map(b => `
+                <div class="entity-card ${b._new ? 'new-record-highlight' : ''}" data-id="${b.box_id || b.id}" ${b._new ? 'data-just-added="true"' : ''}>
+                    <div class="card-row">
+                        <div class="field-group full">
+                            <div class="field-label">Box Type Name</div>
+                            <input type="text" class="input-inline" value="${b.name}" onchange="updateEntity('boxes', '${b.box_id || b.id}', 'name', this.value)">
+                        </div>
+                    </div>
+                    <div class="card-row">
+                        <div class="field-group">
+                            <div class="field-label">Width (cm)</div>
+                            <input type="number" class="input-inline" value="${b.width}" onchange="updateEntity('boxes', '${b.box_id || b.id}', 'width', parseFloat(this.value))">
+                        </div>
+                        <div class="field-group">
+                            <div class="field-label">Length (cm)</div>
+                            <input type="number" class="input-inline" value="${b.length}" onchange="updateEntity('boxes', '${b.box_id || b.id}', 'length', parseFloat(this.value))">
+                        </div>
+                        <div class="field-group">
+                            <div class="field-label">Height (cm)</div>
+                            <input type="number" class="input-inline" value="${b.height}" onchange="updateEntity('boxes', '${b.box_id || b.id}', 'height', parseFloat(this.value))">
+                        </div>
+                        <div class="field-group">
+                            <div class="field-label">Weight (kg)</div>
+                            <input type="number" class="input-inline" value="${b.weight}" onchange="updateEntity('boxes', '${b.box_id || b.id}', 'weight', parseFloat(this.value))">
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="toggles-group">
+                            <div class="toggle-item">
+                                <span>Active</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" ${b.active ? 'checked' : ''} onchange="updateEntity('boxes', '${b.box_id || b.id}', 'active', this.checked)">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="toggles-group">
+                            <div class="toggle-item">
+                                <span>Color</span>
+                                <input type="color" value="${b.color || '#3B82F6'}" onchange="updateEntity('boxes', '${b.box_id || b.id}', 'color', this.value)" style="width:30px; height:24px; border:none; padding:0; cursor:pointer">
+                            </div>
+                        </div>
+                        <button class="btn-icon-sm" onclick="deleteEntity('boxes', '${b.box_id || b.id}')">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            const firstCard = grid.firstElementChild;
+            if (firstCard && firstCard.dataset.justAdded === "true") {
+                const nameInput = firstCard.querySelector('input');
+                if (nameInput) setTimeout(() => nameInput.focus(), 100);
+                setTimeout(() => {
+                    firstCard.removeAttribute('data-just-added');
+                    settingsData.boxes.forEach(p => delete p._new);
+                    settingsData.pallets.forEach(p => delete p._new);
+                }, 2000);
+            }
+        }
+
+        function handleSearch(type, val) {
+            searchQueries[type] = val;
+            if (type === 'pallets') renderPallets();
+            if (type === 'positions') renderPositions();
+            if (type === 'boxes') renderBoxes();
+        }
+
+        // ─── CRUD OPERATIONS ────────────────────────
+        async function addEntity(type) {
+            const table = type;
+            const newObj = {
+                name: "New " + (type === 'pallets' ? 'Pallet' : type === 'positions' ? 'Position' : 'Box'),
+                active: true
+            };
+
+            if (type === 'pallets') {
+                Object.assign(newObj, { type: "TBD", width: 244, length: 315, weight: 6804 });
+            } else if (type === 'positions') {
+                Object.assign(newObj, { height: 160, weight: 6804 });
+            } else if (type === 'boxes') {
+                const colors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#F97316', '#06B6D4'];
+                Object.assign(newObj, {
+                    width: 10, length: 10, height: 10, weight: 1,
+                    color: colors[Math.floor(Math.random() * colors.length)]
+                });
+            }
+
+            try {
+                const { data, error } = await supabaseClient.from(table).insert([newObj]).select();
+                if (error) throw error;
+
+                showToast(`New ${type.slice(0, -1)} added to the top!`);
+                await fetchSettings();
+
+                setTimeout(() => {
+                    const card = document.querySelector(`.entity-card[data-id="${data[0].id || data[0].box_id}"]`);
+                    if (card) {
+                        card.classList.add('new-record-highlight');
+                        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        card.querySelector('input')?.focus();
+                    }
+                }, 150);
+            } catch (err) {
+                console.error("Add Error:", err);
+                showToast("Failed to add entry", "error");
+            }
+        }
+
+        async function updateEntity(type, id, field, value) {
+            try {
+                const idField = (type === 'boxes') ? 'box_id' : 'id';
+                const { error } = await supabaseClient.from(type).update({ [field]: value }).eq(idField, id);
+                if (error) throw error;
+
+                const item = settingsData[type].find(i => (i.id === id || i.box_id === id));
+                if (item) item[field] = value;
+
+                if (field === 'active' || field === 'color' || field === 'name') {
+                    if (type === 'boxes') initBoxList();
+                    else initConfigPanel();
+                }
+            } catch (err) {
+                console.error("Update Error:", err);
+            }
+        }
+
+        async function deleteEntity(type, id) {
+            if (!confirm(`Are you sure you want to delete this ${type.slice(0, -1)}?`)) return;
+            try {
+                const idField = (type === 'boxes') ? 'box_id' : 'id';
+                const { error } = await supabaseClient.from(type).delete().eq(idField, id);
+                if (error) throw error;
+
+                showToast("Record deleted successfully");
+                await fetchSettings();
+            } catch (err) {
+                showToast("Failed to delete entry", "error");
+            }
+        }
+
+        // }
+
+        // ─── MODAL CONTROLS ─────────────────────────
         const btnSettings = document.getElementById('btn-settings');
         const modalOverlay = document.createElement('div');
         modalOverlay.className = 'modal-overlay';
@@ -1593,7 +2175,7 @@
                         </svg>
                         Entity Configuration
                     </h2>
-                    <button class="btn-icon-sm" id="close-modal">
+                    <button class="btn-icon-sm" id="close-modal" style="border:none; background:transparent">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="18" y1="6" x2="6" y2="18"></line>
                             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -1618,337 +2200,95 @@
                         </div>
                     </div>
                     <div class="modal-main">
-                        <!-- PALLET TAB -->
                         <div class="settings-sec active" id="tab-pallet">
                             <div class="sec-hdr">
                                 <h3>Pallet Templates</h3>
-                                <button class="btn-add">
+                                <div class="search-wrap">
+                                    <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                    <input type="text" placeholder="Search pallets..." oninput="handleSearch('pallets', this.value)">
+                                </div>
+                                <button class="btn-add" onclick="addEntity('pallets')">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                                     Add Pallet
                                 </button>
                             </div>
-                            <div class="entity-grid">
-                                <!-- Pallet Card 1 -->
-                                <div class="entity-card">
-                                    <div class="card-row">
-                                        <div class="field-group full">
-                                            <div class="field-label">Pallet Name</div>
-                                            <input type="text" class="input-inline" value="PMC Standard Cargo Pallet">
-                                        </div>
-                                    </div>
-                                    <div class="card-row">
-                                        <div class="field-group">
-                                            <div class="field-label">Type</div>
-                                            <input type="text" class="input-inline" value="PMC">
-                                        </div>
-                                        <div class="field-group">
-                                            <div class="field-label">Width (cm)</div>
-                                            <input type="number" class="input-inline" value="243.8">
-                                        </div>
-                                        <div class="field-group">
-                                            <div class="field-label">Length (cm)</div>
-                                            <input type="number" class="input-inline" value="317.5">
-                                        </div>
-                                        <div class="field-group">
-                                            <div class="field-label">Weight (kg)</div>
-                                            <input type="number" class="input-inline" value="6804">
-                                        </div>
-                                    </div>
-                                    <div class="card-footer">
-                                        <div class="toggles-group">
-                                            <div class="toggle-item">
-                                                <span>Active</span>
-                                                <label class="toggle-switch">
-                                                    <input type="checkbox" checked>
-                                                    <span class="slider"></span>
-                                                </label>
-                                            </div>
-                                            <div class="toggle-item">
-                                                <span>Default</span>
-                                                <label class="toggle-switch">
-                                                    <input type="checkbox" checked>
-                                                    <span class="slider"></span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <button class="btn-icon-sm">
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                                        </button>
-                                    </div>
-                                </div>
-                                <!-- Pallet Card 2 -->
-                                <div class="entity-card">
-                                    <div class="card-row">
-                                        <div class="field-group full">
-                                            <div class="field-label">Pallet Name</div>
-                                            <input type="text" class="input-inline" value="PAG Heavy Duty Pallet">
-                                        </div>
-                                    </div>
-                                    <div class="card-row">
-                                        <div class="field-group">
-                                            <div class="field-label">Type</div>
-                                            <input type="text" class="input-inline" value="PAG">
-                                        </div>
-                                        <div class="field-group">
-                                            <div class="field-label">Width (cm)</div>
-                                            <input type="number" class="input-inline" value="223.5">
-                                        </div>
-                                        <div class="field-group">
-                                            <div class="field-label">Length (cm)</div>
-                                            <input type="number" class="input-inline" value="317.5">
-                                        </div>
-                                        <div class="field-group">
-                                            <div class="field-label">Weight (kg)</div>
-                                            <input type="number" class="input-inline" value="4626">
-                                        </div>
-                                    </div>
-                                    <div class="card-footer">
-                                        <div class="toggles-group">
-                                            <div class="toggle-item">
-                                                <span>Active</span>
-                                                <label class="toggle-switch">
-                                                    <input type="checkbox" checked>
-                                                    <span class="slider"></span>
-                                                </label>
-                                            </div>
-                                            <div class="toggle-item">
-                                                <span>Default</span>
-                                                <label class="toggle-switch">
-                                                    <input type="checkbox">
-                                                    <span class="slider"></span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <button class="btn-icon-sm">
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                            <div class="entity-grid"></div>
                         </div>
-
-                        <!-- POSITION TAB -->
                         <div class="settings-sec" id="tab-position">
                             <div class="sec-hdr">
                                 <h3>Deck Positions</h3>
-                                <button class="btn-add">
+                                <div class="search-wrap">
+                                    <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                    <input type="text" placeholder="Search positions..." oninput="handleSearch('positions', this.value)">
+                                </div>
+                                <button class="btn-add" onclick="addEntity('positions')">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                                     Add Position
                                 </button>
                             </div>
-                            <div class="entity-grid">
-                                <div class="entity-card">
-                                    <div class="card-row">
-                                        <div class="field-group full">
-                                            <div class="field-label">Position Name</div>
-                                            <input type="text" class="input-inline" value="Lower Deck Compartment A">
-                                        </div>
-                                    </div>
-                                    <div class="card-row">
-                                        <div class="field-group">
-                                            <div class="field-label">Max Height (cm)</div>
-                                            <input type="number" class="input-inline" value="120">
-                                        </div>
-                                        <div class="field-group">
-                                            <div class="field-label">Max Weight (kg)</div>
-                                            <input type="number" class="input-inline" value="3175">
-                                        </div>
-                                    </div>
-                                    <div class="card-footer">
-                                        <div class="toggles-group">
-                                            <div class="toggle-item">
-                                                <span>Active</span>
-                                                <label class="toggle-switch">
-                                                    <input type="checkbox" checked>
-                                                    <span class="slider"></span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <button class="btn-icon-sm">
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="entity-card">
-                                    <div class="card-row">
-                                        <div class="field-group full">
-                                            <div class="field-label">Position Name</div>
-                                            <input type="text" class="input-inline" value="Main Deck Section B (Heavy Load)">
-                                        </div>
-                                    </div>
-                                    <div class="card-row">
-                                        <div class="field-group">
-                                            <div class="field-label">Max Height (cm)</div>
-                                            <input type="number" class="input-inline" value="160">
-                                        </div>
-                                        <div class="field-group">
-                                            <div class="field-label">Max Weight (kg)</div>
-                                            <input type="number" class="input-inline" value="6804">
-                                        </div>
-                                    </div>
-                                    <div class="card-footer">
-                                        <div class="toggles-group">
-                                            <div class="toggle-item">
-                                                <span>Active</span>
-                                                <label class="toggle-switch">
-                                                    <input type="checkbox" checked>
-                                                    <span class="slider"></span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <button class="btn-icon-sm">
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                            <div class="entity-grid"></div>
                         </div>
-
-                        <!-- BOX TAB -->
                         <div class="settings-sec" id="tab-box">
                             <div class="sec-hdr">
                                 <h3>Box Catalog</h3>
-                                <button class="btn-add">
+                                <div class="search-wrap">
+                                    <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                    <input type="text" placeholder="Search boxes..." oninput="handleSearch('boxes', this.value)">
+                                </div>
+                                <button class="btn-add" onclick="addEntity('boxes')">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                                     Add Box
                                 </button>
                             </div>
-                            <div class="entity-grid">
-                                <div class="entity-card">
-                                    <div class="card-row">
-                                        <div class="field-group full">
-                                            <div class="field-label">Box Type Name</div>
-                                            <input type="text" class="input-inline" value="2-Pack POD Self Locking Display Box">
-                                        </div>
-                                    </div>
-                                    <div class="card-row">
-                                        <div class="field-group">
-                                            <div class="field-label">Width (cm)</div>
-                                            <input type="number" class="input-inline" value="14.2">
-                                        </div>
-                                        <div class="field-group">
-                                            <div class="field-label">Length (cm)</div>
-                                            <input type="number" class="input-inline" value="8.9">
-                                        </div>
-                                        <div class="field-group">
-                                            <div class="field-label">Height (cm)</div>
-                                            <input type="number" class="input-inline" value="11">
-                                        </div>
-                                        <div class="field-group">
-                                            <div class="field-label">Weight (kg)</div>
-                                            <input type="number" class="input-inline" value="0.42">
-                                        </div>
-                                    </div>
-                                    <div class="card-footer">
-                                        <div class="toggles-group">
-                                            <div class="toggle-item">
-                                                <span>Active</span>
-                                                <label class="toggle-switch">
-                                                    <input type="checkbox" checked>
-                                                    <span class="slider"></span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <button class="btn-icon-sm">
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div class="entity-card">
-                                    <div class="card-row">
-                                        <div class="field-group full">
-                                            <div class="field-label">Box Type Name</div>
-                                            <input type="text" class="input-inline" value="10-Pack POD Standard Industrial Container">
-                                        </div>
-                                    </div>
-                                    <div class="card-row">
-                                        <div class="field-group">
-                                            <div class="field-label">Width (cm)</div>
-                                            <input type="number" class="input-inline" value="34.5">
-                                        </div>
-                                        <div class="field-group">
-                                            <div class="field-label">Length (cm)</div>
-                                            <input type="number" class="input-inline" value="16.4">
-                                        </div>
-                                        <div class="field-group">
-                                            <div class="field-label">Height (cm)</div>
-                                            <input type="number" class="input-inline" value="11">
-                                        </div>
-                                        <div class="field-group">
-                                            <div class="field-label">Weight (kg)</div>
-                                            <input type="number" class="input-inline" value="1.85">
-                                        </div>
-                                    </div>
-                                    <div class="card-footer">
-                                        <div class="toggles-group">
-                                            <div class="toggle-item">
-                                                <span>Active</span>
-                                                <label class="toggle-switch">
-                                                    <input type="checkbox" checked>
-                                                    <span class="slider"></span>
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <button class="btn-icon-sm">
-                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                            <div class="entity-grid"></div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-ftr">
-                    <button class="btn btn-ghost" id="cancel-settings">Discard Changes</button>
-                    <button class="btn btn-optimize" id="save-settings">Save Changes</button>
+                    <button class="btn-manual" style="background:#eee; color:#333; border:none" id="cancel-settings">Close</button>
+                    <button class="btn-add" id="save-settings">Save All Changes</button>
                 </div>
             </div>
         `;
         document.body.appendChild(modalOverlay);
 
-        btnSettings.addEventListener('click', () => modalOverlay.classList.add('show'));
-        document.getElementById('close-modal').addEventListener('click', () => modalOverlay.classList.remove('show'));
-        document.getElementById('cancel-settings').addEventListener('click', () => modalOverlay.classList.remove('show'));
-        document.getElementById('save-settings').addEventListener('click', () => {
-            modalOverlay.classList.remove('show');
-            // Logic to update data would go here
-        });
-
+        // Sidebar Navigation Handling
         const navItems = modalOverlay.querySelectorAll('.nav-item');
         const sections = modalOverlay.querySelectorAll('.settings-sec');
+
         navItems.forEach(item => {
             item.addEventListener('click', () => {
-                navItems.forEach(i => i.classList.remove('active'));
-                sections.forEach(s => s.classList.remove('active'));
+                navItems.forEach(ni => ni.classList.remove('active'));
+                sections.forEach(sec => sec.classList.remove('active'));
                 item.classList.add('active');
                 document.getElementById('tab-' + item.dataset.tab).classList.add('active');
             });
         });
 
-        // ─── DATA ───────────────────────────────────
-        const BOX_TYPES = [
-            { id: 'b2', name: '2-Pack POD Self Locking', w: 14.2, d: 8.9, h: 11, kg: 0.42, color: '#3B82F6' },
-            { id: 'b4', name: '4-Pack POD Self Locking', w: 17.3, d: 14.2, h: 11, kg: 0.78, color: '#8B5CF6' },
-            { id: 'b6', name: '6-Pack POD Self Locking', w: 22.8, d: 16.4, h: 11, kg: 1.12, color: '#EC4899' },
-            { id: 'b10', name: '10-Pack POD Self Locking', w: 34.5, d: 16.4, h: 11, kg: 1.85, color: '#F59E0B' },
-            { id: 'b15', name: '15-Pack POD Self Locking', w: 36.3, d: 23.9, h: 11, kg: 2.60, color: '#10B981' },
-            { id: 'b25', name: '25-Pack POD RSC', w: 38.9, d: 33.4, h: 11, kg: 4.20, color: '#EF4444' },
-            { id: 'b40', name: '40-Pack POD RSC', w: 38.9, d: 27.0, h: 19.5, kg: 6.50, color: '#F97316' },
-            { id: 'b50', name: '50-Pack POD RSC', w: 58.9, d: 33.4, h: 19.5, kg: 8.10, color: '#06B6D4' },
-        ];
-        const DECKS = {
-            standard: { pw: 243.8, pd: 317.5, maxH: 244, maxW: 6804 },
-            lower: { pw: 243.8, pd: 317.5, maxH: 120, maxW: 3175 },
-            main: { pw: 243.8, pd: 317.5, maxH: 160, maxW: 6804 },
-            freighter: { pw: 243.8, pd: 317.5, maxH: 240, maxW: 11340 },
+        // Open/Close logic
+        btnSettings.onclick = () => {
+            renderPallets(); renderPositions(); renderBoxes();
+            modalOverlay.classList.add('show');
         };
-        const DFLT_QTY = { b2: 24, b4: 18, b6: 0, b10: 12, b15: 0, b25: 8, b40: 0, b50: 0 };
-        const DFLT_CHK = { b2: true, b4: true, b6: false, b10: true, b15: false, b25: true, b40: false, b50: false };
+        const closeModal = () => modalOverlay.classList.remove('show');
+        document.getElementById('close-modal').onclick = closeModal;
+        document.getElementById('cancel-settings').onclick = closeModal;
+        document.getElementById('save-settings').onclick = () => {
+            showToast('All changes are saved in real-time to Supabase!');
+            setTimeout(closeModal, 800);
+        };
+
+        // Data is now loaded from Supabase in INIT section
+
+        // Initial Tooltip Logic
+        const tooltip = document.getElementById('tooltip');
 
         let S = {
-            deck: 'standard',
-            qty: { ...DFLT_QTY },
-            chk: { ...DFLT_CHK },
+            palletId: null,
+            positionId: null,
+            qty: {},
+            chk: {},
+            placedQty: {}, // Track successfully placed boxes
             layout: [],
             layerDefs: [],
             totalWeight: 0,
@@ -1956,135 +2296,372 @@
             isManual: false,
             zoom: 0.5,
         };
-
-        const SCALE = 2.2;
+        window.S = S; // Expose for 3D script
 
         // ─── BOX LIST ───────────────────────────────
         function initBoxList() {
             const el = document.getElementById('box-list');
-            el.innerHTML = BOX_TYPES.map(b => `
-    <div class="box-row${S.chk[b.id] && S.qty[b.id] > 0 ? ' active' : ''}" id="row-${b.id}">
-      <input type="checkbox" class="box-chk" data-id="${b.id}" ${S.chk[b.id] ? 'checked' : ''}>
-      <div class="box-dot" style="background:${b.color}"></div>
-      <div class="box-info">
-        <div class="box-name">${b.name}</div>
-        <div class="box-dim">${b.w}×${b.d}×${b.h}cm · ${b.kg}kg/box</div>
-      </div>
-      <div class="qty-ctrl">
-        <button class="qty-b" data-id="${b.id}" data-d="-1">−</button>
-        <input type="number" class="qty-n" data-id="${b.id}" value="${S.qty[b.id]}" min="0">
-        <button class="qty-b" data-id="${b.id}" data-d="1">+</button>
-      </div>
-    </div>
-  `).join('');
-            el.querySelectorAll('.box-chk').forEach(c => c.addEventListener('change', e => { S.chk[e.target.dataset.id] = e.target.checked; refreshRow(e.target.dataset.id); updateSummary() }));
+            if (!el) return;
+
+            if (!settingsData.boxes || settingsData.boxes.length === 0) {
+                el.innerHTML = '<div class="fcst-empty">No boxes found in database.</div>';
+                return;
+            }
+
+            const activeBoxes = settingsData.boxes.filter(b => b.active);
+            if (activeBoxes.length === 0) {
+                el.innerHTML = '<div class="fcst-empty">No active boxes to select. Check settings.</div>';
+                return;
+            }
+
+            activeBoxes.forEach(b => {
+                const id = b.box_id || b.id;
+                if (S.qty[id] === undefined) S.qty[id] = 0;
+                if (S.chk[id] === undefined) S.chk[id] = false; // Default: Not ticked
+            });
+
+            el.innerHTML = activeBoxes.map(b => {
+                const id = b.box_id || b.id;
+                const boxColor = b.color || '#3B82F6';
+                const placed = S.placedQty[id] || 0;
+                const requested = S.qty[id] || 0;
+                const isShort = S.optimized && requested > placed;
+
+                return `
+                    <div class="box-row${S.chk[id] && S.qty[id] > 0 ? ' active' : ''}${isShort ? ' short' : ''}" id="row-${id}">
+                      <input type="checkbox" class="box-chk" data-id="${id}" ${S.chk[id] ? 'checked' : ''}>
+                      <div class="box-dot" style="background:${boxColor}"></div>
+                      <div class="box-info">
+                        <div class="box-name">${b.name}</div>
+                        <div class="box-dim">${b.width}×${b.length}×${b.height}cm · ${b.weight}kg</div>
+                        ${S.optimized && requested > 0 ? `<div class="box-status ${isShort ? 'text-red' : 'text-green'}">${placed} / ${requested} placed</div>` : ''}
+                      </div>
+                      <div class="qty-ctrl">
+                        <button class="qty-b" data-id="${id}" data-d="-1">−</button>
+                        <input type="number" class="qty-n" data-id="${id}" value="${S.qty[id] || 0}" min="0">
+                        <button class="qty-b" data-id="${id}" data-d="1">+</button>
+                      </div>
+                    </div>
+                `;
+            }).join('');
+
+            el.querySelectorAll('.box-chk').forEach(c => c.addEventListener('change', e => {
+                S.chk[e.target.dataset.id] = e.target.checked;
+                refreshRow(e.target.dataset.id);
+                updateSummary();
+            }));
+
             el.querySelectorAll('.qty-b').forEach(b => b.addEventListener('click', e => {
                 const id = e.currentTarget.dataset.id, d = +e.currentTarget.dataset.d;
                 S.qty[id] = Math.max(0, (S.qty[id] || 0) + d);
-                el.querySelector(`input[data-id="${id}"]`).value = S.qty[id];
+                const input = el.querySelector(`input.qty-n[data-id="${id}"]`);
+                if (input) input.value = S.qty[id];
                 refreshRow(id); updateSummary();
             }));
-            el.querySelectorAll('.qty-n').forEach(i => i.addEventListener('input', e => { S.qty[e.target.dataset.id] = Math.max(0, parseInt(e.target.value) || 0); refreshRow(e.target.dataset.id); updateSummary() }));
-        }
-        function refreshRow(id) {
-            const r = document.getElementById('row-' + id);
-            if (r) r.className = 'box-row' + (S.chk[id] && S.qty[id] > 0 ? ' active' : '');
+
+            el.querySelectorAll('.qty-n').forEach(i => i.addEventListener('input', e => {
+                S.qty[e.target.dataset.id] = Math.max(0, parseInt(e.target.value) || 0);
+                refreshRow(e.target.dataset.id);
+                updateSummary();
+            }));
         }
 
-        // ─── DECK ────────────────────────────────────
-        document.getElementById('deck-opts').addEventListener('click', e => {
-            const o = e.target.closest('.deck-opt');
-            if (!o) return;
-            document.querySelectorAll('.deck-opt').forEach(x => x.classList.remove('sel'));
-            o.classList.add('sel');
-            S.deck = o.dataset.deck;
-            updatePalletDims(); updateCapacity();
-        });
+        function refreshRow(id) {
+            const r = document.getElementById('row-' + id);
+            if (!r) return;
+            const placed = S.placedQty[id] || 0;
+            const requested = S.qty[id] || 0;
+            const isShort = S.optimized && requested > placed;
+
+            r.className = 'box-row' + (S.chk[id] && S.qty[id] > 0 ? ' active' : '') + (isShort ? ' short' : '');
+            const statusEl = r.querySelector('.box-status');
+            if (statusEl) {
+                statusEl.textContent = `${placed} / ${requested} placed`;
+                statusEl.className = 'box-status ' + (isShort ? 'text-red' : 'text-green');
+            }
+        }
+
+        // ─── CONFIG PANEL ───────────────────────────
+        function initConfigPanel() {
+            renderPalletOptions();
+            renderPositionOptions();
+        }
+
+        function renderPalletOptions() {
+            const el = document.getElementById('pallet-opts');
+            const activePallets = settingsData.pallets.filter(p => p.active).sort((a, b) => a.weight - b.weight);
+            el.innerHTML = activePallets.map(p => `
+                <div class="deck-opt ${S.palletId === p.id ? 'sel' : ''}" data-id="${p.id}" onclick="selectPallet('${p.id}')">
+                    <div class="deck-opt-hd">
+                        <span class="deck-opt-name">${p.name}</span>
+                        <span class="deck-badge">${p.type || 'N/A'}</span>
+                    </div>
+                    <div class="deck-specs">
+                        <div class="deck-spec">
+                            <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                            ${p.width}×${p.length}cm
+                        </div>
+                        <div class="deck-spec">
+                            <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                            Max Load: ${p.weight.toLocaleString()}kg
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderPositionOptions() {
+            const el = document.getElementById('position-opts');
+            const activePositions = settingsData.positions.filter(p => p.active).sort((a, b) => a.weight - b.weight);
+            el.innerHTML = activePositions.map(p => `
+                <div class="deck-opt ${S.positionId === p.id ? 'sel' : ''}" data-id="${p.id}" onclick="selectPosition('${p.id}')">
+                    <div class="deck-opt-hd">
+                        <span class="deck-opt-name">${p.name}</span>
+                    </div>
+                    <div class="deck-specs">
+                        <div class="deck-spec">
+                            <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+                            Height: ${p.height}cm
+                        </div>
+                        <div class="deck-spec">
+                            <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+                            Weight: ${p.weight.toLocaleString()}kg
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function selectPallet(id) {
+            S.palletId = id;
+            renderPalletOptions();
+            updatePalletDims();
+            updateCapacity();
+        }
+
+        function selectPosition(id) {
+            S.positionId = (S.positionId === id) ? null : id;
+            renderPositionOptions();
+            updatePalletDims();
+            updateCapacity();
+        }
+
         function updatePalletDims() {
-            const c = DECKS[S.deck];
-            document.getElementById('g-max').textContent = ' / ' + c.maxW.toLocaleString() + ' kg';
-            document.getElementById('r-height-sub') && (document.getElementById('r-height-sub').textContent = 'of ' + c.maxH + 'cm max');
+            const p = settingsData.pallets.find(i => i.id === S.palletId);
+            const pos = settingsData.positions.find(i => i.id === S.positionId);
+            if (!p) { alert('Please select a pallet template'); return; }
+
+            document.getElementById('g-max').textContent = ' / ' + Math.min(p.weight, pos.weight).toLocaleString() + ' kg';
+            document.getElementById('r-height-sub') && (document.getElementById('r-height-sub').textContent = 'of ' + pos.height + 'cm max');
         }
 
         // ─── SUMMARY ────────────────────────────────
         function updateSummary() {
             let boxes = 0, types = 0;
-            BOX_TYPES.forEach(b => { if (S.chk[b.id] && S.qty[b.id] > 0) { boxes += S.qty[b.id]; types++ } });
+            if (S.optimized) {
+                boxes = S.layout.length;
+                types = Object.keys(S.placedQty).length;
+                // Force refresh list to show statuses
+                initBoxList();
+            } else {
+                settingsData.boxes.filter(b => b.active).forEach(b => {
+                    const id = b.box_id || b.id;
+                    if (S.chk[id] && S.qty[id] > 0) { boxes += S.qty[id]; types++ }
+                });
+            }
             document.getElementById('sum-boxes').textContent = boxes;
             document.getElementById('sum-types').textContent = types;
             if (S.optimized) computeEfficiency();
         }
         function computeEfficiency() {
-            if (!S.layout.length) { document.getElementById('sum-eff').textContent = '—'; return }
-            const c = DECKS[S.deck];
-            let usedVol = 0; S.layout.forEach(i => usedVol += i.w * i.d * i.h);
-            const eff = Math.round(usedVol / (c.pw * c.pd * c.maxH) * 100);
+            if (!S.layout.length) { document.getElementById('sum-eff').textContent = '—'; return; }
+            const p = settingsData.pallets.find(i => i.id === S.palletId);
+            const pos = settingsData.positions.find(i => i.id === S.positionId);
+            if (!p) return;
+
+            let usedVol = 0;
+            S.layout.forEach(i => usedVol += i.w * i.d * i.h);
+            const heightUsed = pos ? pos.height : (S.actualHeight || 1);
+            const eff = Math.round(usedVol / (p.width * p.length * heightUsed) * 100);
             document.getElementById('sum-eff').textContent = eff + '%';
         }
 
         // ─── OPTIMIZE ───────────────────────────────
         function runOptimize() {
-            const c = DECKS[S.deck];
+            console.log('Optimization started...');
+            document.getElementById('vis-empty').style.display = 'none';
+
+            const p = settingsData.pallets.find(i => i.id === S.palletId);
+            const pos = settingsData.positions.find(i => i.id === S.positionId);
+            if (!p) { alert('Please select a pallet template'); return; } // pos optional
+
             const boxes = [];
-            BOX_TYPES.forEach(b => { if (S.chk[b.id] && S.qty[b.id] > 0) for (let i = 0; i < S.qty[b.id]; i++)boxes.push({ ...b }) });
+            settingsData.boxes.filter(b => b.active).forEach(b => {
+                const id = b.box_id || b.id;
+                if (S.chk[id] && S.qty[id] > 0) {
+                    for (let i = 0; i < S.qty[id]; i++) boxes.push({ ...b, id: id });
+                }
+            });
             if (!boxes.length) { alert('Please select at least one box type with quantity > 0'); return }
-            boxes.sort((a, b) => (b.w * b.d) - (a.w * a.d));
+            boxes.sort((a, b) => (b.width * b.length) - (a.width * a.length));
+
+            const maxW = pos ? Math.min(p.weight, pos.weight) : p.weight;
+            const maxH = pos ? pos.height : Infinity;
 
             const layout = [];
+            // Each layer: { baseZ, maxH (tallest box), footprint [{x1,y1,x2,y2}], items[] }
             const layerDefs = [];
-            const occupancy = [];
             let totalWeight = 0;
 
-            function canPlace(bx, by, bw, bd, li) {
-                for (const o of occupancy) {
-                    if (o.li !== li) continue;
-                    if (!(bx >= o.x2 || bx + bw <= o.x1 || by >= o.y2 || by + bd <= o.y1)) return false;
+            function overlaps(a, b) {
+                return !(a.x2 <= b.x1 || a.x1 >= b.x2 || a.y2 <= b.y1 || a.y1 >= b.y2);
+            }
+
+            function canFit(bx, by, bw, bd, li) {
+                if (bx + bw > p.width || by + bd > p.length) return false;
+                const rect = { x1: bx, y1: by, x2: bx + bw, y2: by + bd };
+                for (const f of layerDefs[li].footprint) {
+                    if (overlaps(rect, f)) return false;
                 }
-                return bx + bw <= c.pw && by + bd <= c.pd;
+                return true;
             }
 
             for (const box of boxes) {
-                if (totalWeight + box.kg > c.maxW) break;
+                if (totalWeight + box.weight > maxW) break;
                 let placed = false;
+
+                // Try existing layers (same baseZ floor)
                 for (let li = 0; li < layerDefs.length && !placed; li++) {
                     const layer = layerDefs[li];
-                    if (layer.z + layer.h + box.h > c.maxH) continue;
-                    for (let bx = 0; bx <= c.pw - box.w && !placed; bx += 1) {
-                        for (let by = 0; by <= c.pd - box.d && !placed; by += 1) {
-                            if (canPlace(bx, by, box.w, box.d, li)) {
-                                layout.push({ id: layout.length, type: box.id, x: bx, y: by, z: layer.z + layer.h, layer: li + 1, w: box.w, d: box.d, h: box.h, kg: box.kg, color: box.color, name: box.name });
-                                occupancy.push({ li, x1: bx, y1: by, x2: bx + box.w, y2: by + box.d });
-                                if (box.h > layer.h) layer.h = box.h;
+                    if (layer.baseZ + box.height > maxH) continue;
+
+                    for (let bx = 0; bx <= p.width - box.width && !placed; bx++) {
+                        for (let by = 0; by <= p.length - box.length && !placed; by++) {
+                            if (canFit(bx, by, box.width, box.length, li)) {
+                                layer.footprint.push({ x1: bx, y1: by, x2: bx + box.width, y2: by + box.length });
+                                if (box.height > layer.maxH) layer.maxH = box.height;
+                                layout.push({
+                                    id: layout.length, type: box.id,
+                                    x: bx, y: by, z: layer.baseZ,
+                                    layer: li + 1,
+                                    w: box.width, d: box.length, h: box.height,
+                                    kg: box.weight,
+                                    color: box.color || '#3B82F6',
+                                    name: box.name
+                                });
                                 layer.items.push(layout[layout.length - 1]);
-                                totalWeight += box.kg; placed = true;
+                                totalWeight += box.weight;
+                                placed = true;
                             }
                         }
                     }
                 }
+
+                // Start a new layer
                 if (!placed) {
-                    const newZ = layerDefs.length ? layerDefs[layerDefs.length - 1].z + layerDefs[layerDefs.length - 1].h : 0;
-                    if (newZ + box.h <= c.maxH) {
+                    const newBaseZ = layerDefs.length
+                        ? layerDefs[layerDefs.length - 1].baseZ + layerDefs[layerDefs.length - 1].maxH
+                        : 0;
+                    if (newBaseZ + box.height <= maxH) {
                         const li = layerDefs.length;
-                        layerDefs.push({ z: newZ, h: box.h, items: [] });
-                        layout.push({ id: layout.length, type: box.id, x: 0, y: 0, z: newZ, layer: li + 1, w: box.w, d: box.d, h: box.h, kg: box.kg, color: box.color, name: box.name });
-                        occupancy.push({ li, x1: 0, y1: 0, x2: box.w, y2: box.d });
+                        layerDefs.push({ baseZ: newBaseZ, maxH: box.height, footprint: [], items: [] });
+                        layerDefs[li].footprint.push({ x1: 0, y1: 0, x2: box.width, y2: box.length });
+                        layout.push({
+                            id: layout.length, type: box.id,
+                            x: 0, y: 0, z: newBaseZ,
+                            layer: li + 1,
+                            w: box.width, d: box.length, h: box.height,
+                            kg: box.weight,
+                            color: box.color || '#3B82F6',
+                            name: box.name
+                        });
                         layerDefs[li].items.push(layout[layout.length - 1]);
-                        totalWeight += box.kg;
+                        totalWeight += box.weight;
                     }
                 }
             }
 
-            S.layout = layout; S.layerDefs = layerDefs; S.totalWeight = totalWeight; S.occupancy = occupancy; S.optimized = true;
-            renderLayout(); updateCapacity(); computeEfficiency(); updateSummary();
+            // Compute actual stack height (used when no deck position selected)
+            let actualHeight = layout.length ? Math.max(...layout.map(i => i.z + i.h)) : 0;
+            S.actualHeight = actualHeight;
+
+            S.layout = layout; S.layerDefs = layerDefs; S.totalWeight = totalWeight; S.optimized = true;
+
+            // Calculate placedQty
+            S.placedQty = {};
+            layout.forEach(item => {
+                const id = item.type;
+                S.placedQty[id] = (S.placedQty[id] || 0) + 1;
+            });
+
+            renderLayout();
+            updateCapacity(); computeEfficiency(); updateSummary();
+
+            // Show correct view FIRST, then render 3D with correct dimensions
             document.getElementById('vis-empty').style.display = 'none';
-            document.getElementById('vis-content').style.display = 'block';
+            if (is3DVisible) {
+                document.getElementById('three-container').style.display = 'block';
+                document.getElementById('vis-content').style.display = 'none';
+                // Wait for browser to paint container at real size, then render
+                requestAnimationFrame(() => {
+                    if (renderer3D) {
+                        const ct = document.getElementById('three-container');
+                        const w = ct.offsetWidth, h = ct.offsetHeight;
+                        if (w > 0 && h > 0) {
+                            renderer3D.setSize(w, h);
+                            camera3D.aspect = w / h;
+                            camera3D.updateProjectionMatrix();
+                        }
+                    }
+                    render3DLayout();
+                });
+            } else {
+                document.getElementById('three-container').style.display = 'none';
+                document.getElementById('vis-content').style.display = 'flex';
+                render3DLayout(); // Still build 3D scene for when user switches
+            }
         }
+
+
+        // View Toggles
+        document.getElementById('btn-view-3d').addEventListener('click', () => {
+            is3DVisible = true;
+            document.getElementById('btn-view-3d').style.background = 'var(--primary)';
+            document.getElementById('btn-view-3d').style.color = '#fff';
+            document.getElementById('btn-view-2d').style.background = 'transparent';
+            document.getElementById('btn-view-2d').style.color = 'var(--text-secondary)';
+            document.getElementById('three-container').style.display = 'block';
+            document.getElementById('vis-content').style.display = 'none';
+            document.getElementById('vis-title').textContent = '3D Preview';
+            // Resize renderer now that container is visible
+            if (renderer3D && S.optimized) {
+                const c = document.getElementById('three-container');
+                renderer3D.setSize(c.offsetWidth, c.offsetHeight);
+                camera3D.aspect = c.offsetWidth / c.offsetHeight;
+                camera3D.updateProjectionMatrix();
+            }
+        });
+
+        document.getElementById('btn-view-2d').addEventListener('click', () => {
+            is3DVisible = false;
+            document.getElementById('btn-view-2d').style.background = 'var(--primary)';
+            document.getElementById('btn-view-2d').style.color = '#fff';
+            document.getElementById('btn-view-3d').style.background = 'transparent';
+            document.getElementById('btn-view-3d').style.color = 'var(--text-secondary)';
+            document.getElementById('three-container').style.display = 'none';
+            document.getElementById('vis-content').style.display = 'flex';
+            document.getElementById('vis-title').textContent = '2D Placement View';
+            if (S.optimized) renderLayout();
+        });
 
         // ─── RENDER ─────────────────────────────────
         function renderLayout() {
-            const c = DECKS[S.deck];
+            const p = settingsData.pallets.find(i => i.id === S.palletId);
+            const pos = settingsData.positions.find(i => i.id === S.positionId);
+            if (!p) return; // pos is optional - no deck height limit
+
             const sc = SCALE * S.zoom;
-            const pw = Math.round(c.pw * sc), pd = Math.round(c.pd * sc);
+            const pw = Math.round(p.width * sc), pd = Math.round(p.length * sc);
             const wrap = document.getElementById('vis-content');
             wrap.innerHTML = '';
 
@@ -2093,7 +2670,7 @@
 
             const lbl = document.createElement('div');
             lbl.className = 'pallet-label';
-            lbl.textContent = `${c.pw} × ${c.pd} cm pallet · ${S.layout.length} boxes · zoom ${S.zoom.toFixed(1)}×`;
+            lbl.textContent = `${p.width} × ${p.length} cm pallet · ${S.layout.length} boxes · zoom ${S.zoom.toFixed(1)}×`;
             pw2.appendChild(lbl);
 
             const outer = document.createElement('div');
@@ -2181,10 +2758,13 @@
         function onDragOver(ev) {
             ev.preventDefault();
             if (!dragItem) return;
-            const sc = SCALE * S.zoom, c = DECKS[S.deck];
+            const p = settingsData.pallets.find(i => i.id === S.palletId);
+            if (!p) return;
+
+            const sc = SCALE * S.zoom;
             const r = ev.currentTarget.getBoundingClientRect();
-            const nx = Math.max(0, Math.min((ev.clientX - r.left - dragOffX) / sc, c.pw - dragItem.w));
-            const ny = Math.max(0, Math.min((ev.clientY - r.top - dragOffY) / sc, c.pd - dragItem.d));
+            const nx = Math.max(0, Math.min((ev.clientX - r.left - dragOffX) / sc, p.width - dragItem.w));
+            const ny = Math.max(0, Math.min((ev.clientY - r.top - dragOffY) / sc, p.length - dragItem.d));
             const dz = document.getElementById('drop-zone');
             dz.style.left = Math.round(nx * sc) + 'px'; dz.style.top = Math.round(ny * sc) + 'px';
             dz.style.width = Math.round(dragItem.w * sc) + 'px'; dz.style.height = Math.round(dragItem.d * sc) + 'px';
@@ -2192,10 +2772,13 @@
         function onDrop(ev) {
             ev.preventDefault();
             if (!dragItem) return;
-            const sc = SCALE * S.zoom, c = DECKS[S.deck];
+            const p = settingsData.pallets.find(i => i.id === S.palletId);
+            if (!p) return;
+
+            const sc = SCALE * S.zoom;
             const r = ev.currentTarget.getBoundingClientRect();
-            const nx = Math.round(Math.max(0, Math.min((ev.clientX - r.left - dragOffX) / sc, c.pw - dragItem.w)));
-            const ny = Math.round(Math.max(0, Math.min((ev.clientY - r.top - dragOffY) / sc, c.pd - dragItem.d)));
+            const nx = Math.round(Math.max(0, Math.min((ev.clientX - r.left - dragOffX) / sc, p.width - dragItem.w)));
+            const ny = Math.round(Math.max(0, Math.min((ev.clientY - r.top - dragOffY) / sc, p.length - dragItem.d)));
             const collides = S.layout.some(it => {
                 if (it.id === dragItem.id || it.layer !== dragItem.layer) return false;
                 return !(nx >= it.x + it.w || nx + dragItem.w <= it.x || ny >= it.y + it.d || ny + dragItem.d <= it.y);
@@ -2225,61 +2808,110 @@
 
         // ─── CAPACITY ───────────────────────────────
         function updateCapacity() {
-            const c = DECKS[S.deck];
-            const tw = S.totalWeight || 0;
-            const pct = tw / c.maxW * 100;
-            document.getElementById('g-cur').textContent = tw.toFixed(1);
-            const fill = document.getElementById('g-fill');
-            fill.style.width = Math.min(pct, 100) + '%';
-            fill.className = 'gauge-fill' + (pct > 90 ? ' danger' : pct > 70 ? ' warn' : '');
-            document.getElementById('g-pct').textContent = pct.toFixed(1) + '% used';
-            document.getElementById('r-weight').textContent = Math.max(0, c.maxW - tw).toFixed(1);
+            const p = settingsData.pallets.find(i => i.id === S.palletId);
+            const pos = settingsData.positions.find(i => i.id === S.positionId);
+            const list = document.getElementById('fcst-list');
+            if (!list) return;
 
+            if (!p) {
+                list.innerHTML = '<div class="fcst-empty">Select a pallet to see forecast.</div>';
+                return;
+            }
+
+            // Limits: pos provides deck height & weight; fallback to pallet limits
+            const maxW = pos ? Math.min(p.weight, pos.weight) : p.weight;
+            const maxH = pos ? pos.height : (S.actualHeight || Infinity);
+
+            // Weight gauge
+            const tw = S.totalWeight || 0;
+            const pct = maxW > 0 ? tw / maxW * 100 : 0;
+            document.getElementById('g-cur').textContent = tw.toFixed(1);
+            document.getElementById('g-max').textContent = ' / ' + maxW.toLocaleString() + ' kg';
+            const fill = document.getElementById('g-fill');
+            if (fill) {
+                fill.style.width = Math.min(pct, 100) + '%';
+                fill.className = 'gauge-fill' + (pct > 90 ? ' danger' : pct > 70 ? ' warn' : '');
+            }
+            document.getElementById('g-pct').textContent = pct.toFixed(1) + '% used';
+            document.getElementById('r-weight').textContent = Math.max(0, maxW - tw).toFixed(1);
+
+            // Space remaining
             let usedVol = 0;
             S.layout.forEach(i => usedVol += i.w * i.d * i.h);
-            const maxVol = c.pw * c.pd * c.maxH;
-            document.getElementById('r-vol').textContent = Math.max(0, Math.round((1 - usedVol / maxVol) * 100));
+            if (pos) {
+                const maxVol = p.width * p.length * pos.height;
+                document.getElementById('r-vol').textContent = Math.max(0, Math.round((1 - usedVol / maxVol) * 100));
+            } else {
+                // No height limit: show % of pallet footprint used (top-layer view)
+                const footprintUsed = S.layout.length
+                    ? [...new Set(S.layout.map(i => i.layer))].length > 1
+                        ? 100
+                        : Math.round(usedVol / (p.width * p.length * (S.actualHeight || 1)) * 100)
+                    : 0;
+                document.getElementById('r-vol').textContent = Math.max(0, 100 - footprintUsed);
+            }
 
-            let maxH = 0;
-            S.layout.forEach(i => { const t = i.z + i.h; if (t > maxH) maxH = t });
+            // Current stack height (top of highest layer)
+            const currentH = S.actualHeight || 0;
+            const remH = isFinite(maxH) ? Math.max(0, maxH - currentH) : Infinity;
+            const remWkg = Math.max(0, maxW - tw);
 
-            updateForecast(c.maxW - tw, c.maxH - maxH);
-        }
+            if (!S.optimized) {
+                list.innerHTML = '<div class="fcst-empty">Run optimization to see forecast</div>';
+                return;
+            }
 
-        function updateForecast(remWkg, remH) {
-            const list = document.getElementById('fcst-list');
-            if (!S.optimized) { list.innerHTML = '<div class="fcst-empty">Run optimization to see forecast</div>'; return }
             list.innerHTML = '';
-            const c = DECKS[S.deck];
-            BOX_TYPES.filter(b => S.chk[b.id] && S.qty[b.id] > 0).forEach(b => {
-                const byW = Math.floor(remWkg / b.kg);
-                const layers = Math.floor(remH / b.h);
-                const byH = layers * Math.floor(c.pw / b.w) * Math.floor(c.pd / b.d);
+            settingsData.boxes.filter(b => b.active && S.chk[b.box_id || b.id] && S.qty[b.box_id || b.id] > 0).forEach(b => {
+                const id = b.box_id || b.id;
+                const requested = S.qty[id] || 0;
+                const placed = S.placedQty[id] || 0;
+                const unplaced = requested - placed;
 
-                const wClass = byW === 0 ? 'red' : byW < 5 ? 'orange' : 'green';
-                const hClass = byH === 0 ? 'red' : byH < 5 ? 'orange' : 'green';
+                let displayVal = '';
+                let displayReason = '';
+                let colorClass = '';
+
+                if (unplaced > 0) {
+                    // Some boxes couldn't be placed
+                    displayVal = `-${unplaced}`;
+                    displayReason = `not placed (capacity full)`;
+                    colorClass = 'red';
+                } else {
+                    // How many MORE could fit
+                    const byW = remWkg > 0 && b.weight > 0 ? Math.floor(remWkg / b.weight) : 0;
+                    let byH;
+                    if (!isFinite(remH) || remH <= 0) {
+                        // No height limit remaining or no space
+                        byH = remH <= 0 ? 0 : Math.floor(p.width / b.width) * Math.floor(p.length / b.length) * 999;
+                    } else {
+                        const extraLayers = Math.floor(remH / b.height);
+                        const perLayer = Math.floor(p.width / b.width) * Math.floor(p.length / b.length);
+                        byH = extraLayers * perLayer;
+                    }
+                    const remMore = Math.max(0, Math.min(byW, isFinite(byH) ? byH : byW));
+                    displayVal = `+${remMore}`;
+                    displayReason = remMore === 0 ? 'at capacity' : `more fits (limit: ${byW < (isFinite(byH) ? byH : byW) ? 'weight' : 'height'})`;
+                    colorClass = remMore === 0 ? 'orange' : 'green';
+                }
 
                 const row = document.createElement('div');
                 row.className = 'fcst-row';
                 row.innerHTML = `
-      <div class="fcst-row-hd">
-        <div class="fcst-dot" style="background:${b.color}"></div>
-        <div class="fcst-name">${b.name}</div>
-      </div>
-      <div class="fcst-metrics">
-        <div>
-          <div class="fcst-m-label">Weight Limit</div>
-          <div class="fcst-m-val ${wClass}">${byW < 1000 ? byW : '∞'}</div>
-        </div>
-        <div>
-          <div class="fcst-m-label">Height Limit</div>
-          <div class="fcst-m-val ${hClass}">${byH < 1000 ? byH : '∞'}</div>
-        </div>
-      </div>`;
+                    <div class="fcst-row-hd">
+                        <div class="fcst-dot" style="background:${b.color || '#3B82F6'}"></div>
+                        <div class="fcst-name">${b.name}</div>
+                    </div>
+                    <div class="fcst-metrics" style="display:flex; align-items:baseline; gap:8px">
+                        <div class="fcst-m-val ${colorClass}">${displayVal}</div>
+                        <div class="fcst-m-label" style="text-transform:none">boxes ${displayReason}</div>
+                    </div>
+                `;
                 list.appendChild(row);
             });
-            if (!list.children.length) list.innerHTML = '<div class="fcst-empty" style="color:var(--danger)">Pallet is at capacity</div>';
+            if (!list.children.length) list.innerHTML = '<div class="fcst-empty">No boxes to analyze.</div>';
         }
+
 
         // ─── MANUAL TOGGLE ──────────────────────────
         document.getElementById('btn-manual-toggle').addEventListener('click', () => {
@@ -2305,10 +2937,16 @@
             S.layout = []; S.layerDefs = []; S.totalWeight = 0; S.occupancy = []; S.optimized = false;
             document.getElementById('vis-empty').style.display = 'flex';
             document.getElementById('vis-content').style.display = 'none';
+            document.getElementById('three-container').style.display = 'none';
             document.getElementById('vis-content').innerHTML = '';
             document.getElementById('sum-eff').textContent = '—';
-            document.getElementById('d-eff').textContent = '—';
             document.getElementById('fcst-list').innerHTML = '<div class="fcst-empty">Run optimization to see forecast</div>';
+
+            // Clear 3D
+            if (palletGroup) {
+                while (palletGroup.children.length > 0) palletGroup.remove(palletGroup.children[0]);
+            }
+
             updateCapacity(); updateSummary();
         });
 
@@ -2319,10 +2957,11 @@
         }
 
         // ─── INIT ────────────────────────────────────
+        fetchSettings();
         initBoxList();
         updateSummary();
-        updatePalletDims();
-        updateCapacity();
+        // Defer 3D init until layout is fully painted
+        setTimeout(window.init3D, 200);
     </script>
 </body>
 
