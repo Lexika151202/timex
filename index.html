@@ -5021,8 +5021,8 @@
         );
         const exceedsPalletMax = totalAllPallets > p.weight;
 
-        let denominator;
-        if (isLastPallet && exceedsPalletMax && pos) {
+        let denominator = p.weight;
+        if (isLastPallet && exceedsPalletMax && pos && pos?.weight) {
           const otherPalletsWeight = S.palletsData.reduce(
             (s, pd, i) => s + (i !== activeIdx ? pd.totalWeight || 0 : 0),
             0,
