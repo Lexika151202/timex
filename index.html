@@ -3405,7 +3405,7 @@
                             <input type="number" class="input-inline" value="${p.length}" onchange="updateEntity('pallets', '${p.id}', 'length', parseFloat(this.value))">
                         </div>
                         <div class="field-group">
-                            <div class="field-label">Max Load (kg)</div>
+                            <div class="field-label">Max Weight (kg)</div>
                             <input type="number" class="input-inline" value="${p.weight}" onchange="updateEntity('pallets', '${p.id}', 'weight', parseFloat(this.value))">
                         </div>
                     </div>
@@ -4038,7 +4038,7 @@
                         </div>
                         <div class="deck-spec">
                             <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
-                            Max Load: ${p.weight.toLocaleString()}kg
+                            Max Weight: ${p.weight.toLocaleString()}kg
                         </div>
                     </div>
                 </div>
