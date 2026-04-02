@@ -5013,20 +5013,26 @@
 
         // Active pallet used
         const palletUsed = activePd ? activePd.totalWeight : S.totalWeight || 0;
+        const activeIdx = Math.max(0, S.activePalletIdx);
+        const isLastPallet = activeIdx === S.palletsData.length - 1;
+        const totalAllPallets = S.palletsData.reduce(
+          (s, pd) => s + (pd.totalWeight || 0),
+          0,
+        );
+        const exceedsPalletMax = totalAllPallets > p.weight;
 
-        // Per pallet remaining
-        const palletRemaining = p ? Math.max(0, p.weight - palletUsed) : 0;
-
-        // 🔥 Final remaining allowed
-
-        let remainingForPlacement = palletRemaining;
-
-        if (
-          S.activePalletIdx == S.palletsData.length - 1 &&
-          S.palletsData.length > 1
-        ) {
-          remainingForPlacement = globalRemaining;
+        let denominator;
+        if (isLastPallet && exceedsPalletMax && pos) {
+          const otherPalletsWeight = S.palletsData.reduce(
+            (s, pd, i) => s + (i !== activeIdx ? pd.totalWeight || 0 : 0),
+            0,
+          );
+          denominator = Math.max(0, pos.weight - otherPalletsWeight);
+        } else {
+          denominator = Math.min(p.weight, pos.weight);
         }
+
+        let remainingForPlacement = denominator - palletUsed;
 
         el.innerHTML = "";
         const grid = document.createElement("div");
