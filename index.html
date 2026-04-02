@@ -4948,14 +4948,14 @@
         );
         const exceedsPalletMax = totalAllPallets > p.weight;
 
-        let denominator;
+        let denominator = p.weight;
         if (isLastPallet && exceedsPalletMax && pos) {
           const otherPalletsWeight = S.palletsData.reduce(
             (s, pd, i) => s + (i !== activeIdx ? pd.totalWeight || 0 : 0),
             0,
           );
           denominator = Math.max(0, pos.weight - otherPalletsWeight);
-        } else {
+        } else if (pos) {
           denominator = Math.min(p.weight, pos.weight);
         }
 
@@ -5022,13 +5022,13 @@
         const exceedsPalletMax = totalAllPallets > p.weight;
 
         let denominator = p.weight;
-        if (isLastPallet && exceedsPalletMax && pos && pos?.weight) {
+        if (isLastPallet && exceedsPalletMax && pos) {
           const otherPalletsWeight = S.palletsData.reduce(
             (s, pd, i) => s + (i !== activeIdx ? pd.totalWeight || 0 : 0),
             0,
           );
           denominator = Math.max(0, pos.weight - otherPalletsWeight);
-        } else {
+        } else if (pos) {
           denominator = Math.min(p.weight, pos.weight);
         }
 
